@@ -62,6 +62,7 @@
 	import {Component, Vue} from 'vue-property-decorator';
 	import IssueViewer from "@/components/IssueViewer.vue";
 	import axios from 'axios';
+	import IIssue from "@/interfaces/IIssue";
 
 	@Component({
 		components: {
@@ -69,7 +70,7 @@
 		},
 	})
 	export default class App extends Vue {
-		public issues: any[] = [];
+		public issues: IIssue[] = [];
 		public users: any[] = [];
 		public milestones: any[] = [];
 
@@ -80,11 +81,11 @@
 		// TODO: make configureable or more generic
 		public API_PATH: string = 'http://localhost/projects/gitlab-triage/backend/api.php';
 
-		get selectedIssue(): any {
+		get selectedIssue(): IIssue {
 			return this.issues[this.selectedIndex];
 		}
 
-		get issueState(): any {
+		get issueState(): string {
 			if (this.selectedIssue) {
 				return this.selectedIssue.state
 			} else {

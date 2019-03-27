@@ -41,6 +41,7 @@
 <script lang="ts">
 	import {Component, Prop, Vue} from 'vue-property-decorator';
 	import VueMarkdown from 'vue-markdown'
+	import IIssue from "@/interfaces/IIssue";
 
 	@Component({
 		components: {
@@ -48,7 +49,7 @@
 		},
 	})
 	export default class IssueViewer extends Vue {
-		@Prop() private issue!: any;
+		@Prop() private issue!: IIssue;
 
 		get labels() {
 			return this.$store.state.labels;
