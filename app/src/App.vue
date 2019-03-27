@@ -23,6 +23,7 @@
 									v-if="user.username !== 'ghost' && user.username !== 'internalreadonly' && user.state === 'active'"
 									type="button"
 									class="btn mb-1"
+									:disabled="issueState === 'closed'"
 									:class="{'btn-primary': selectedIssueAssignee === user.id, 'btn-outline-primary': selectedIssueAssignee !== user.id}"
 									@click="assignIssue(user.id)"
 							>
@@ -36,11 +37,15 @@
 						<button
 								type="button"
 								class="btn mb-1"
+								:disabled="issueState === 'closed'"
 								:class="{'btn-secondary': selectedIssueAssignee === 0, 'btn-outline-secondary': selectedIssueAssignee !== 0}"
 								@click="assignIssue(0)"
 						>
 							Unassigned
 						</button>
+						&nbsp;
+						<button v-if="issueState === 'opened'" class="btn btn-outline-danger mb-1" @click="closeIssue()">Close</button>
+						<button v-if="issueState === 'closed'" class="btn btn-outline-success mb-1" @click="reopenIssue()">Reopen</button>
 					</div>
 				</div>
 			</div>
@@ -76,6 +81,14 @@
 
 		get selectedIssue(): any {
 			return this.issues[this.selectedIndex];
+		}
+
+		get issueState(): any {
+			if (this.selectedIssue) {
+				return this.selectedIssue.state
+			} else {
+				return '';
+			}
 		}
 
 		get selectedIssueAssignee(): number|null {
@@ -139,6 +152,20 @@
 				if (this.milestones.length) {
 					this.selectedMilestone = this.milestones[0].id;
 				}
+			})
+		}
+
+		public closeIssue() {
+			let index = this.selectedIndex;
+			axios.post(this.API_PATH + '/close_issue/' + this.selectedIssue.iid).then((response) => {
+				this.$set(this.issues, index, response.data)
+			})
+		}
+
+		public reopenIssue(issueId: number) {
+			let index = this.selectedIndex;
+			axios.post(this.API_PATH + '/reopen_issue/' + this.selectedIssue.iid).then((response) => {
+				this.$set(this.issues, index, response.data)
 			})
 		}
 

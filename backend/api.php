@@ -80,5 +80,15 @@ $app->post('/assign_issue/{id}', function (Request $request, Response $response,
 	$result = $issues->update(GITLAB_PROJECT_ID, $args['id'], ['assignee_ids' => [$body['user']], 'milestone_id' => $body['milestone']]);
 	return $response->withJson($result);
 });
+$app->post('/close_issue/{id}', function (Request $request, Response $response, array $args) use ($client) {
+	$issues = new \Gitlab\Api\Issues($client);
+	$result = $issues->update(GITLAB_PROJECT_ID, $args['id'], ['state_event' => 'close', 'assignee_ids' => [0], 'milestone_id' => 0]);
+	return $response->withJson($result);
+});
+$app->post('/reopen_issue/{id}', function (Request $request, Response $response, array $args) use ($client) {
+	$issues = new \Gitlab\Api\Issues($client);
+	$result = $issues->update(GITLAB_PROJECT_ID, $args['id'], ['state_event' => 'reopen']);
+	return $response->withJson($result);
+});
 
 $app->run();
