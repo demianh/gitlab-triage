@@ -25,11 +25,12 @@
 									class="btn mb-1"
 									:disabled="issueState === 'closed'"
 									:class="{'btn-primary': selectedIssueAssignee === user.id, 'btn-outline-primary': selectedIssueAssignee !== user.id}"
-									@click="assignIssue(user.id)"
+									@click="toggleAssignIssue(user.id)"
 							>
 								<img :src="user.avatar_url" class="avatar"/>
 								<span class="username">
 									{{user.name}}
+									<span v-if="weightPerPerson[user.id]" class="badge badge-light">{{weightPerPerson[user.id]}}</span>
 								</span>
 							</button>
 						&nbsp;
@@ -102,6 +103,25 @@
 			return null;
 		}
 
+		get weightPerPerson(): {[key: number]: number} {
+			let weights: {[key: number]: number} = {};
+			if (this.issues) {
+				this.issues.forEach((issue) => {
+					if (issue.weight) {
+						if (issue.assignees.length > 0) {
+							let userid = issue.assignees[0].id;
+							if (weights[userid]) {
+								weights[userid] += issue.weight
+							} else {
+								weights[userid] = issue.weight
+							}
+						}
+					}
+				})
+			}
+			return weights;
+		}
+
 		public previousIssue() {
 			if (this.selectedIndex > 0) {
 				this.selectedIndex--;
@@ -167,6 +187,14 @@
 			axios.post(this.API_PATH + '/reopen_issue/' + this.selectedIssue.iid).then((response) => {
 				this.$set(this.issues, index, response.data)
 			})
+		}
+
+		public toggleAssignIssue(userId: number) {
+			if (this.selectedIssueAssignee === userId) {
+				this.assignIssue(0);
+			} else {
+				this.assignIssue(userId);
+			}
 		}
 
 		public assignIssue(userId: number) {
