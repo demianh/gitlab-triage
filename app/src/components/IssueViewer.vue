@@ -50,6 +50,12 @@
 		box-shadow: 1px 1px 18px rgba(0, 0, 0, 0.2);
 		border-radius: 10px;
 		padding: 40px;
+
+		@media (max-width: 767px) {
+			padding: 20px;
+			margin: 0;
+			margin-bottom: 20px;
+		}
 	}
 	.issue-description {
 		white-space: pre-line;

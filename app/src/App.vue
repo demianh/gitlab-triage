@@ -22,18 +22,20 @@
 							<button
 									v-if="user.username !== 'ghost' && user.username !== 'internalreadonly' && user.state === 'active'"
 									type="button"
-									class="btn"
+									class="btn mb-1"
 									:class="{'btn-primary': selectedIssueAssignee === user.id, 'btn-outline-primary': selectedIssueAssignee !== user.id}"
 									@click="assignIssue(user.id)"
 							>
 								<img :src="user.avatar_url" class="avatar"/>
-								{{user.name}}
+								<span class="username">
+									{{user.name}}
+								</span>
 							</button>
 						&nbsp;
 						</span>
 						<button
 								type="button"
-								class="btn"
+								class="btn mb-1"
 								:class="{'btn-secondary': selectedIssueAssignee === 0, 'btn-outline-secondary': selectedIssueAssignee !== 0}"
 								@click="assignIssue(0)"
 						>
@@ -187,6 +189,16 @@
 <style lang="less" scoped>
 	.nav-menue {
 		padding: 20px;
+
+		@media (max-width: 767px) {
+			padding: 10px;
+		}
+	}
+
+	@media (max-width: 767px) {
+		.username {
+			display: none;
+		}
 	}
 
 	.avatar {
