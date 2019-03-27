@@ -55,6 +55,11 @@ $app->get('/issues', function (Request $request, Response $response, array $args
 	}
 	return $response->withJson($issues);
 });
+$app->get('/issue/{id}', function (Request $request, Response $response, array $args) use ($client) {
+	$issues = new \Gitlab\Api\Issues($client);
+	$result = $issues->show(GITLAB_PROJECT_ID, $args['id']);
+	return $response->withJson($result);
+});
 $app->get('/milestones', function (Request $request, Response $response, array $args) use ($client) {
 	$instance = new \Gitlab\Api\Milestones($client);
 	$milestones = $instance->all(GITLAB_PROJECT_ID, ['state' => 'active']);

@@ -52,7 +52,7 @@
 			</div>
 			<issue-viewer :issue="selectedIssue"></issue-viewer>
 			<div class="text-muted text-center">
-				Issue {{selectedIndex + 1}} von {{issues.length}}
+				Issue {{selectedIndex + 1}} von {{issues.length}} <a href="#" @click="reloadIssue()">Reload Issue</a>
 			</div>
 		</div>
 	</div>
@@ -210,6 +210,14 @@
 			axios.post(this.API_PATH + '/assign_issue/' + this.selectedIssue.iid, postdata).then((response) => {
 				this.$set(this.issues, index, response.data)
 			})
+		}
+
+		public reloadIssue() {
+			let index = this.selectedIndex;
+			axios.get(this.API_PATH + '/issue/' + this.selectedIssue.iid).then((response) => {
+				this.$set(this.issues, index, response.data)
+			})
+			return false;
 		}
 
 		// keyboard navigation
