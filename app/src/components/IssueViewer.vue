@@ -2,7 +2,10 @@
 	<div class="issue-viewer">
 		<div v-if="issue">
 
-			<h3>{{issue.title}}</h3>
+			<h3>
+				{{issue.title}}
+				<span v-if="issue.state === 'closed'" class="text-danger">(closed)</span>
+			</h3>
 			<div>
 				<span v-if="project">
 					<a :href="project.web_url + '/issues/' + issue.iid" target="_blank">
