@@ -104,6 +104,7 @@
 			this.loadUsers();
 			this.loadMilestones();
 			this.loadLabels();
+			this.loadProject();
 		}
 
 		public loadIssues() {
@@ -121,6 +122,12 @@
 		public loadLabels() {
 			axios.get(this.API_PATH + '/labels').then((response) => {
 				this.$store.commit('SET_LABELS', response.data)
+			})
+		}
+
+		public loadProject() {
+			axios.get(this.API_PATH + '/project').then((response) => {
+				this.$store.commit('SET_PROJECT', response.data)
 			})
 		}
 

@@ -69,6 +69,11 @@ $app->get('/labels', function (Request $request, Response $response, array $args
 	}
 	return $response->withJson($labels_indexed);
 });
+$app->get('/project', function (Request $request, Response $response, array $args) use ($client) {
+	$instance = new \Gitlab\Api\Projects($client);
+	$project = $instance->show(GITLAB_PROJECT_ID);
+	return $response->withJson($project);
+});
 $app->post('/assign_issue/{id}', function (Request $request, Response $response, array $args) use ($client) {
 	$body = $request->getParsedBody();
 	$issues = new \Gitlab\Api\Issues($client);

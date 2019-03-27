@@ -4,10 +4,11 @@
 
 			<h3>{{issue.title}}</h3>
 			<div>
-				<!-- TODO: make more generic -->
-				<a :href="'https://gitlab.usystems.ch/webling/source/issues/' + issue.iid" target="_blank">
-					Open #{{issue.iid}} in Gitlab
-				</a>
+				<span v-if="project">
+					<a :href="project.web_url + '/issues/' + issue.iid" target="_blank">
+						Open #{{issue.iid}} in Gitlab
+					</a>
+				</span>
 				<span v-for="label in issue.labels">
 					<span class="badge badge-pill badge-dark" :style="{backgroundColor: labels[label] ? labels[label].color : 'inherit'}">{{label}}</span>&nbsp;
 				</span>
@@ -35,6 +36,10 @@
 
 		get labels() {
 			return this.$store.state.labels;
+		}
+
+		get project() {
+			return this.$store.state.project;
 		}
 	}
 </script>
