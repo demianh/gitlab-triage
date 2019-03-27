@@ -61,10 +61,11 @@
 
 		get description() {
 			if (this.issue && this.project) {
-				return this.issue.description.replace('(/uploads/', '(' + this.project.web_url + '/uploads/');
-			} else {
-				return '';
+				if (this.issue.description) {
+					return this.issue.description.replace('(/uploads/', '(' + this.project.web_url + '/uploads/');
+				}
 			}
+			return '';
 		}
 	}
 </script>
