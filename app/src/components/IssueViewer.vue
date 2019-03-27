@@ -24,7 +24,15 @@
 				Weight: <b>{{issue.weight}}</b>
 			</div>
 			<hr>
-			<div class="issue-description">{{issue.description}}</div>
+			<div class="issue-description">
+				<vue-markdown :source="description"></vue-markdown>
+			</div>
+			<div v-if="issue.user_notes_count > 0">
+				<hr>
+				<a :href="project.web_url + '/issues/' + issue.iid" target="_blank">
+					{{issue.user_notes_count}} Comments
+				</a>
+			</div>
 
 		</div>
 	</div>
@@ -32,8 +40,13 @@
 
 <script lang="ts">
 	import {Component, Prop, Vue} from 'vue-property-decorator';
+	import VueMarkdown from 'vue-markdown'
 
-	@Component
+	@Component({
+		components: {
+			'vue-markdown': VueMarkdown
+		},
+	})
 	export default class IssueViewer extends Vue {
 		@Prop() private issue!: any;
 
@@ -43,6 +56,14 @@
 
 		get project() {
 			return this.$store.state.project;
+		}
+
+		get description() {
+			if (this.issue && this.project) {
+				return this.issue.description.replace('(/uploads/', '(' + this.project.web_url + '/uploads/');
+			} else {
+				return '';
+			}
 		}
 	}
 </script>
@@ -60,7 +81,13 @@
 			margin-bottom: 20px;
 		}
 	}
+</style>
+<style lang="less">
 	.issue-description {
-		white-space: pre-line;
+		pre > code {
+			display: block;
+			border: 1px solid #e5e5e5;
+			padding: 8px 12px;
+		}
 	}
 </style>

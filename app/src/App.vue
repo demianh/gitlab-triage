@@ -216,7 +216,7 @@
 			let index = this.selectedIndex;
 			axios.get(this.API_PATH + '/issue/' + this.selectedIssue.iid).then((response) => {
 				this.$set(this.issues, index, response.data)
-			})
+			});
 			return false;
 		}
 
