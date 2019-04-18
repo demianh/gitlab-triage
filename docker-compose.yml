@@ -1,0 +1,18 @@
+version: '2'
+
+services:
+  nginx:
+    image: nginx
+    restart: always
+    ports:
+      - 8200:80
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf
+      - ./:/www
+    links:
+      - php
+
+  php:
+    image: php:7.3-fpm-stretch
+    volumes:
+      - ./:/www

@@ -79,7 +79,7 @@
 		public keyHandler: any = null;
 
 		// TODO: make configureable or more generic
-		public API_PATH: string = 'http://localhost/projects/gitlab-triage/backend/api.php';
+		public API_PATH: string = '/backend/api.php';
 
 		get selectedIssue(): IIssue {
 			return this.issues[this.selectedIndex];
