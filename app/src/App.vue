@@ -75,8 +75,7 @@
 		},
 	})
 	export default class App extends Vue {
-		public issues: IIssue[] = [];
-		public users: any[] = [];
+		//public users: any[] = [];
 		public milestones: any[] = [];
 
 		public selectedMilestone: number = 0;
@@ -85,8 +84,16 @@
 
 		public sortInverse: boolean = false;
 
-		// TODO: make configureable or more generic
+		// TODO: make configurable or more generic
 		public API_PATH: string = 'http://localhost/projects/gitlab-triage/backend/api.php';
+
+		get issues(): IIssue[] {
+			return this.$store.state.issues;
+		}
+
+		get users(): any[] {
+			return this.$store.state.users;
+		}
 
 		get selectedIssue(): IIssue {
 			return this.issues[this.selectedIndex];
@@ -152,13 +159,13 @@
 
 		public loadIssues() {
 			axios.get(this.API_PATH + '/issues').then((response) => {
-				this.issues = response.data;
+				this.$store.commit('SET_ISSUES', response.data);
 			})
 		}
 
 		public loadUsers() {
 			axios.get(this.API_PATH + '/users').then((response) => {
-				this.users = response.data;
+				this.$store.commit('SET_USERS', response.data);
 			})
 		}
 
@@ -186,14 +193,14 @@
 		public closeIssue() {
 			let index = this.selectedIndex;
 			axios.post(this.API_PATH + '/close_issue/' + this.selectedIssue.iid).then((response) => {
-				this.$set(this.issues, index, response.data)
+				this.$store.commit('SET_ISSUE', { index: index, value: response.data })
 			})
 		}
 
 		public reopenIssue(issueId: number) {
 			let index = this.selectedIndex;
 			axios.post(this.API_PATH + '/reopen_issue/' + this.selectedIssue.iid).then((response) => {
-				this.$set(this.issues, index, response.data)
+				this.$store.commit('SET_ISSUE', { index: index, value: response.data })
 			})
 		}
 
@@ -216,14 +223,14 @@
 
 			let index = this.selectedIndex;
 			axios.post(this.API_PATH + '/assign_issue/' + this.selectedIssue.iid, postdata).then((response) => {
-				this.$set(this.issues, index, response.data)
+				this.$store.commit('SET_ISSUE', { index: index, value: response.data })
 			})
 		}
 
 		public reloadIssue() {
 			let index = this.selectedIndex;
 			axios.get(this.API_PATH + '/issue/' + this.selectedIssue.iid).then((response) => {
-				this.$set(this.issues, index, response.data)
+				this.$store.commit('SET_ISSUE', { index: index, value: response.data })
 			});
 			return false;
 		}
@@ -246,29 +253,31 @@
 		}
 
 		public sortById() {
-			this.issues = this.issues.sort((a: IIssue, b: IIssue) => {
+			let sorted = this.issues.sort((a: IIssue, b: IIssue) => {
 				if (this.sortInverse) {
 					return a.id - b.id;
 				} else {
 					return b.id - a.id;
 				}
 			});
+			this.$store.commit('SET_ISSUES', sorted);
 			this.sortInverse = !this.sortInverse;
 		}
 
 		public sortByWeight() {
-			this.issues = this.issues.sort((a: IIssue, b: IIssue) => {
+			let sorted = this.issues.sort((a: IIssue, b: IIssue) => {
 				if (this.sortInverse) {
 					return a.weight - b.weight;
 				} else {
 					return b.weight - a.weight;
 				}
 			});
+			this.$store.commit('SET_ISSUES', sorted);
 			this.sortInverse = !this.sortInverse;
 		}
 
 		public sortRandom() {
-			this.issues = this.shuffleArray(this.issues);
+			this.$store.commit('SET_ISSUES', this.shuffleArray(this.issues));
 		}
 
 		private shuffleArray(array: any[]) {

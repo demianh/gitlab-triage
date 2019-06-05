@@ -7,6 +7,8 @@ export default new Vuex.Store({
 	state: {
 		labels: {},
 		project: null,
+		issues: [],
+		users: []
 	},
 	mutations: {
 		SET_LABELS(state, value) {
@@ -14,6 +16,18 @@ export default new Vuex.Store({
 		},
 		SET_PROJECT(state, value) {
 			state.project = value
+		},
+		SET_ISSUES(state, value) {
+			state.issues = value
+		},
+		SET_USERS(state, value) {
+			state.users = value
+		},
+		SET_ISSUE(state, payload) {
+			console.log(state.issues, payload);
+			let copy = JSON.parse(JSON.stringify(state.issues));
+			copy[payload.index] = payload.value;
+			state.issues = copy;
 		},
 	},
 	actions: {},
