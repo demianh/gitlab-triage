@@ -6,7 +6,7 @@
 					<div class="col">
 						<button @click="previousIssue()" class="btn btn-outline-secondary">Zurück</button>
 					</div>
-					<div class="col">
+					<div class="col text-center">
 						Target Milestone: <select v-model="selectedMilestone">
 						<option v-for="milestone in milestones" :value="milestone.id">{{milestone.title}}</option>
 					</select>
@@ -75,9 +75,6 @@
 		},
 	})
 	export default class App extends Vue {
-		//public users: any[] = [];
-		public milestones: any[] = [];
-
 		public selectedMilestone: number = 0;
 		public selectedIndex: number = 0;
 		public keyHandler: any = null;
@@ -93,6 +90,10 @@
 
 		get users(): any[] {
 			return this.$store.state.users;
+		}
+
+		get milestones(): any[] {
+			return this.$store.state.milestones;
 		}
 
 		get selectedIssue(): IIssue {
@@ -183,7 +184,7 @@
 
 		public loadMilestones() {
 			axios.get(this.API_PATH + '/milestones').then((response) => {
-				this.milestones = response.data;
+				this.$store.commit('SET_MILESTONES', response.data);
 				if (this.milestones.length) {
 					this.selectedMilestone = this.milestones[0].id;
 				}

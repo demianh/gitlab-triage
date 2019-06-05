@@ -8,7 +8,8 @@ export default new Vuex.Store({
 		labels: {},
 		project: null,
 		issues: [],
-		users: []
+		users: [],
+		milestones: []
 	},
 	mutations: {
 		SET_LABELS(state, value) {
@@ -22,6 +23,9 @@ export default new Vuex.Store({
 		},
 		SET_USERS(state, value) {
 			state.users = value
+		},
+		SET_MILESTONES(state, value) {
+			state.milestones = value
 		},
 		SET_ISSUE(state, payload) {
 			console.log(state.issues, payload);
