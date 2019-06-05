@@ -52,7 +52,12 @@
 			</div>
 			<issue-viewer :issue="selectedIssue"></issue-viewer>
 			<div class="text-muted text-center">
-				Issue {{selectedIndex + 1}} von {{issues.length}} <a href="#" @click="reloadIssue()">Reload Issue</a>
+				Issue {{selectedIndex + 1}} von {{issues.length}} &middot;
+				<a @click="reloadIssue()">Reload Issue</a> &middot;
+				Sort by:
+				<a @click="sortById()">Age</a>&nbsp;
+				<a @click="sortByWeight()">Weight</a>&nbsp;
+				<a @click="sortRandom()">Random</a>&nbsp;
 			</div>
 		</div>
 	</div>
@@ -77,6 +82,8 @@
 		public selectedMilestone: number = 0;
 		public selectedIndex: number = 0;
 		public keyHandler: any = null;
+
+		public sortInverse: boolean = false;
 
 		// TODO: make configureable or more generic
 		public API_PATH: string = 'http://localhost/projects/gitlab-triage/backend/api.php';
@@ -238,6 +245,50 @@
 			window.removeEventListener('keyup', this.keyHandler);
 		}
 
+		public sortById() {
+			this.issues = this.issues.sort((a: IIssue, b: IIssue) => {
+				if (this.sortInverse) {
+					return a.id - b.id;
+				} else {
+					return b.id - a.id;
+				}
+			});
+			this.sortInverse = !this.sortInverse;
+		}
+
+		public sortByWeight() {
+			this.issues = this.issues.sort((a: IIssue, b: IIssue) => {
+				if (this.sortInverse) {
+					return a.weight - b.weight;
+				} else {
+					return b.weight - a.weight;
+				}
+			});
+			this.sortInverse = !this.sortInverse;
+		}
+
+		public sortRandom() {
+			this.issues = this.shuffleArray(this.issues);
+		}
+
+		private shuffleArray(array: any[]) {
+			let currentIndex = array.length, temporaryValue, randomIndex;
+
+			// While there remain elements to shuffle...
+			while (0 !== currentIndex) {
+
+				// Pick a remaining element...
+				randomIndex = Math.floor(Math.random() * currentIndex);
+				currentIndex -= 1;
+
+				// And swap it with the current element.
+				temporaryValue = array[currentIndex];
+				Vue.set(array, currentIndex, array[randomIndex]);
+				Vue.set(array, randomIndex, temporaryValue);
+			}
+			return array;
+		}
+
 	}
 </script>
 
@@ -247,6 +298,17 @@
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;
 		color: #2c3e50;
+	}
+
+	// overwrite default bootstrap styles
+	a:not([href]):not([tabindex]) {
+		color: #007bff;
+		cursor: pointer;
+	}
+	a:not([href]):not([tabindex]):focus,
+	a:not([href]):not([tabindex]):hover {
+		color: #0056b3;
+		text-decoration: underline;
 	}
 </style>
 
