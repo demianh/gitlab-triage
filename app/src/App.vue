@@ -1,15 +1,17 @@
 <template>
 	<div id="app">
-		<div class="container">
+		<div v-if="view === 'issues'" class="container">
 			<div class="nav-menue">
 				<div class="row">
 					<div class="col">
 						<button @click="previousIssue()" class="btn btn-outline-secondary">Zurück</button>
 					</div>
 					<div class="col text-center">
-						Target Milestone: <select v-model="selectedMilestone">
-						<option v-for="milestone in milestones" :value="milestone.id">{{milestone.title}}</option>
-					</select>
+						Target Milestone:
+						<select v-model="selectedMilestone">
+							<option v-for="milestone in milestones" :value="milestone.id">{{milestone.title}}</option>
+						</select>
+						&nbsp;<button @click="view = 'list'" class="btn btn-outline-secondary">Show List</button>
 					</div>
 					<div class="col text-right">
 						<button @click="nextIssue()" class="btn btn-outline-secondary">Weiter</button>
@@ -18,9 +20,7 @@
 				<div class="row">
 					<div class="col text-center pt-4">
 						<span v-for="user in users">
-							<!-- TODO: make user filter configurable -->
 							<button
-									v-if="user.username !== 'ghost' && user.username !== 'internalreadonly' && user.state === 'active'"
 									type="button"
 									class="btn mb-1"
 									:disabled="issueState === 'closed'"
@@ -60,6 +60,21 @@
 				<a @click="sortRandom()">Random</a>&nbsp;
 			</div>
 		</div>
+		<div v-if="view === 'list'" class="container-fluid">
+			<div class="nav-menue">
+				<div class="row">
+					<div class="col text-center">
+						<button @click="view = 'issues'" class="btn btn-outline-secondary">Show Issues</button>
+					</div>
+				</div>
+			</div>
+			<issue-list></issue-list>
+			<div class="text-muted text-center">
+				Sort by:
+				<a @click="sortById()">Age</a>&nbsp;
+				<a @click="sortByWeight()">Weight</a>&nbsp;
+			</div>
+		</div>
 	</div>
 </template>
 
@@ -68,32 +83,52 @@
 	import IssueViewer from "@/components/IssueViewer.vue";
 	import axios from 'axios';
 	import IIssue from "@/interfaces/IIssue";
+	import IssueList from "@/components/IssueList.vue";
+	import IUser from "@/interfaces/IUser";
 
 	@Component({
 		components: {
 			IssueViewer,
+			IssueList,
 		},
 	})
 	export default class App extends Vue {
-		public selectedMilestone: number = 0;
-		public selectedIndex: number = 0;
 		public keyHandler: any = null;
 
 		public sortInverse: boolean = false;
 
-		// TODO: make configurable or more generic
-		public API_PATH: string = 'http://localhost/projects/gitlab-triage/backend/api.php';
+		public view: string = 'issues';
+
+		get API_PATH(): string {
+			return this.$store.state.API_PATH;
+		}
 
 		get issues(): IIssue[] {
 			return this.$store.state.issues;
 		}
 
-		get users(): any[] {
+		get users(): IUser[] {
 			return this.$store.state.users;
 		}
 
 		get milestones(): any[] {
 			return this.$store.state.milestones;
+		}
+
+		get selectedMilestone(): number {
+			return this.$store.state.selectedMilestone;
+		}
+
+		set selectedMilestone(milestone: number) {
+			this.$store.commit('SET_SELECTED_MILESTONE', milestone);
+		}
+
+		get selectedIndex(): number {
+			return this.$store.state.selectedIssueIndex;
+		}
+
+		set selectedIndex(index: number) {
+			this.$store.commit('SET_SELECTED_ISSUE_INDEX', index);
 		}
 
 		get selectedIssue(): IIssue {
@@ -120,22 +155,7 @@
 		}
 
 		get weightPerPerson(): {[key: number]: number} {
-			let weights: {[key: number]: number} = {};
-			if (this.issues) {
-				this.issues.forEach((issue) => {
-					if (issue.weight) {
-						if (issue.assignees.length > 0) {
-							let userid = issue.assignees[0].id;
-							if (weights[userid]) {
-								weights[userid] += issue.weight
-							} else {
-								weights[userid] = issue.weight
-							}
-						}
-					}
-				})
-			}
-			return weights;
+			return this.$store.getters.weightPerPerson;
 		}
 
 		public previousIssue() {
@@ -166,7 +186,11 @@
 
 		public loadUsers() {
 			axios.get(this.API_PATH + '/users').then((response) => {
-				this.$store.commit('SET_USERS', response.data);
+				// TODO: make user filter configurable
+				let filtered = response.data.filter((user: IUser) => {
+					return user.username !== 'ghost' && user.username !== 'internalreadonly' && user.state === 'active';
+				});
+				this.$store.commit('SET_USERS', filtered);
 			})
 		}
 
