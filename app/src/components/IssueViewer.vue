@@ -92,4 +92,8 @@
 			padding: 8px 12px;
 		}
 	}
+
+	img {
+		max-width: 100%;
+	}
 </style>
