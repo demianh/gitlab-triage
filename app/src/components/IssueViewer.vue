@@ -19,6 +19,9 @@
 			<div class="text-muted">
 				Milestone:
 				<b v-if="issue.milestone">{{issue.milestone.title}}</b>
+				<span v-if="!issue.milestone">
+					<a @click="setMilestone()">Set Milestone</a>
+				</span>
 			</div>
 			<div class="text-muted">
 				Weight: <b>{{issue.weight}}</b>
@@ -41,6 +44,7 @@
 <script lang="ts">
 	import {Component, Prop, Vue} from 'vue-property-decorator';
 	import VueMarkdown from 'vue-markdown'
+	import axios from 'axios';
 	import IIssue from "@/interfaces/IIssue";
 
 	@Component({
@@ -51,12 +55,24 @@
 	export default class IssueViewer extends Vue {
 		@Prop() private issue!: IIssue;
 
+		get API_PATH(): string {
+			return this.$store.state.API_PATH;
+		}
+
 		get labels() {
 			return this.$store.state.labels;
 		}
 
 		get project() {
 			return this.$store.state.project;
+		}
+
+		get selectedIndex(): number {
+			return this.$store.state.selectedIssueIndex;
+		}
+
+		get selectedMilestone(): number {
+			return this.$store.state.selectedMilestone;
 		}
 
 		get description() {
@@ -66,6 +82,17 @@
 				}
 			}
 			return '';
+		}
+
+		public setMilestone() {
+			let postdata = {
+				milestone: this.selectedMilestone,
+			};
+
+			let index = this.selectedIndex;
+			axios.post(this.API_PATH + '/assign_issue/' + this.issue.iid, postdata).then((response) => {
+				this.$store.commit('SET_ISSUE', { index: index, value: response.data })
+			})
 		}
 	}
 </script>
@@ -90,6 +117,9 @@
 			display: block;
 			border: 1px solid #e5e5e5;
 			padding: 8px 12px;
+		}
+		img {
+			max-width: 100%;
 		}
 	}
 </style>

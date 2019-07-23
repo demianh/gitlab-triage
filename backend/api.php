@@ -82,7 +82,14 @@ $app->get('/project', function (Request $request, Response $response, array $arg
 $app->post('/assign_issue/{id}', function (Request $request, Response $response, array $args) use ($client) {
 	$body = $request->getParsedBody();
 	$issues = new \Gitlab\Api\Issues($client);
-	$result = $issues->update(GITLAB_PROJECT_ID, $args['id'], ['assignee_ids' => [$body['user']], 'milestone_id' => $body['milestone']]);
+	$data = [];
+	if (isset($body['user'])) {
+		$data['assignee_ids'] = [$body['user']];
+	}
+	if (isset($body['milestone'])) {
+		$data['milestone_id'] = $body['milestone'];
+	}
+	$result = $issues->update(GITLAB_PROJECT_ID, $args['id'], $data);
 	return $response->withJson($result);
 });
 $app->post('/close_issue/{id}', function (Request $request, Response $response, array $args) use ($client) {
