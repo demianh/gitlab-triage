@@ -1,3 +1,4 @@
 /backend/_config.php
 vendor
 /.idea
+.env

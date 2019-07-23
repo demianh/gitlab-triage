@@ -14,7 +14,7 @@ export default new Vuex.Store({
 		selectedMilestone: 0,
 		selectedIssueIndex: 0,
 		// TODO: make configurable or more generic
-		API_PATH: 'http://localhost/projects/gitlab-triage/backend/api.php',
+		API_PATH: process.env.API_PATH || 'http://localhost/projects/gitlab-triage/backend/api.php',
 	},
 	mutations: {
 		SET_LABELS(state, value) {

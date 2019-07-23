@@ -96,8 +96,6 @@
 		public keyHandler: any = null;
 
 		public sortInverse: boolean = false;
-		// TODO: make configureable or more generic
-		public API_PATH: string = '/backend/api.php';
 
 		public view: string = 'issues';
 
