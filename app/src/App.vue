@@ -69,7 +69,11 @@
 				<div class="nav-menue">
 					<div class="row">
 						<div class="col text-center">
-							<button @click="view = 'issues'" class="btn btn-outline-secondary">Show Issues</button>
+							Target Milestone:
+							<select v-model="selectedMilestone">
+								<option v-for="milestone in milestones" :value="milestone.id">{{milestone.title}}</option>
+							</select>
+							&nbsp;<button @click="view = 'issues'" class="btn btn-outline-secondary">Show Issues</button>
 						</div>
 					</div>
 				</div>
