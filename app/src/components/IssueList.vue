@@ -14,9 +14,9 @@
 								#{{issue.iid}}
 							</a>
 						</span>
-						{{issue.title}}
 						<a @click="unassignIssue(index)" class="float-right">&#10005;</a>
 						<span class="badge badge-secondary float-right mr-1">{{issue.weight}}</span>
+						{{issue.title}}
 					</div>
 				</div>
 			</div>
