@@ -1,24 +1,28 @@
 <template>
 	<div id="app">
-		<div v-if="view === 'issues'" class="container">
-			<div class="nav-menue">
-				<div class="row">
-					<div class="col">
-						<button @click="previousIssue()" class="btn btn-outline-secondary">Zurück</button>
+		<div v-if="loading" class="text-center mt-5">
+			Loading Data from Gitlab ...
+		</div>
+		<div v-else>
+			<div v-if="view === 'issues'" class="container">
+				<div class="nav-menue">
+					<div class="row">
+						<div class="col">
+							<button @click="previousIssue()" class="btn btn-outline-secondary">Zurück</button>
+						</div>
+						<div class="col text-center">
+							Target Milestone:
+							<select v-model="selectedMilestone">
+								<option v-for="milestone in milestones" :value="milestone.id">{{milestone.title}}</option>
+							</select>
+							&nbsp;<button @click="view = 'list'" class="btn btn-outline-secondary">Show List</button>
+						</div>
+						<div class="col text-right">
+							<button @click="nextIssue()" class="btn btn-outline-secondary">Weiter</button>
+						</div>
 					</div>
-					<div class="col text-center">
-						Target Milestone:
-						<select v-model="selectedMilestone">
-							<option v-for="milestone in milestones" :value="milestone.id">{{milestone.title}}</option>
-						</select>
-						&nbsp;<button @click="view = 'list'" class="btn btn-outline-secondary">Show List</button>
-					</div>
-					<div class="col text-right">
-						<button @click="nextIssue()" class="btn btn-outline-secondary">Weiter</button>
-					</div>
-				</div>
-				<div class="row">
-					<div class="col text-center pt-4">
+					<div class="row">
+						<div class="col text-center pt-4">
 						<span v-for="user in users">
 							<button
 									type="button"
@@ -35,51 +39,53 @@
 							</button>
 						&nbsp;
 						</span>
-						<button
-								type="button"
-								class="btn mb-1"
-								:disabled="issueState === 'closed'"
-								:class="{'btn-secondary': selectedIssueAssignee === 0, 'btn-outline-secondary': selectedIssueAssignee !== 0}"
-								@click="assignIssue(0)"
-						>
-							Unassigned
-						</button>
-						&nbsp;
-						<button v-if="issueState === 'opened'" class="btn btn-outline-danger mb-1" @click="closeIssue()">Close</button>
-						<button v-if="issueState === 'closed'" class="btn btn-outline-success mb-1" @click="reopenIssue()">Reopen</button>
+							<button
+									type="button"
+									class="btn mb-1"
+									:disabled="issueState === 'closed'"
+									:class="{'btn-secondary': selectedIssueAssignee === 0, 'btn-outline-secondary': selectedIssueAssignee !== 0}"
+									@click="assignIssue(0)"
+							>
+								Unassigned
+							</button>
+							&nbsp;
+							<button v-if="issueState === 'opened'" class="btn btn-outline-danger mb-1" @click="closeIssue()">Close</button>
+							<button v-if="issueState === 'closed'" class="btn btn-outline-success mb-1" @click="reopenIssue()">Reopen</button>
+						</div>
 					</div>
 				</div>
-			</div>
-			<issue-viewer :issue="selectedIssue"></issue-viewer>
-			<div class="text-muted text-center">
-				Issue {{selectedIndex + 1}} von {{issues.length}} &middot;
-				<a @click="reloadIssue()">Reload Issue</a> &middot;
-				Sort by:
-				<a @click="sortById()">Age</a>&nbsp;
-				<a @click="sortByWeight()">Weight</a>&nbsp;
-				<a @click="sortRandom()">Random</a>&nbsp;
-			</div>
-		</div>
-		<div v-if="view === 'list'" class="container-fluid">
-			<div class="nav-menue">
-				<div class="row">
-					<div class="col text-center">
-						<button @click="view = 'issues'" class="btn btn-outline-secondary">Show Issues</button>
-					</div>
+				<issue-viewer :issue="selectedIssue"></issue-viewer>
+				<div class="text-muted text-center">
+					Issue {{selectedIndex + 1}} von {{issues.length}} &middot;
+					<a @click="loadIssues()">Reload All</a> &middot;
+					<a @click="reloadIssue()">Reload Issue</a> &middot;
+					Sort by:
+					<a @click="sortById()">Age</a>&nbsp;
+					<a @click="sortByWeight()">Weight</a>&nbsp;
+					<a @click="sortRandom()">Random</a>&nbsp;
 				</div>
 			</div>
-			<issue-list></issue-list>
-			<div class="text-muted text-center">
-				Sort by:
-				<a @click="sortById()">Age</a>&nbsp;
-				<a @click="sortByWeight()">Weight</a>&nbsp;
+			<div v-if="view === 'list'" class="container-fluid">
+				<div class="nav-menue">
+					<div class="row">
+						<div class="col text-center">
+							<button @click="view = 'issues'" class="btn btn-outline-secondary">Show Issues</button>
+						</div>
+					</div>
+				</div>
+				<issue-list></issue-list>
+				<div class="text-muted text-center">
+					Sort by:
+					<a @click="sortById()">Age</a>&nbsp;
+					<a @click="sortByWeight()">Weight</a>&nbsp;
+				</div>
 			</div>
 		</div>
 	</div>
 </template>
 
 <script lang="ts">
-	import {Component, Vue} from 'vue-property-decorator';
+	import {Component, Vue, Watch} from 'vue-property-decorator';
 	import IssueViewer from "@/components/IssueViewer.vue";
 	import axios from 'axios';
 	import IIssue from "@/interfaces/IIssue";
@@ -98,6 +104,8 @@
 		public sortInverse: boolean = false;
 
 		public view: string = 'issues';
+
+		public loading: boolean = false;
 
 		get API_PATH(): string {
 			return this.$store.state.API_PATH;
@@ -170,48 +178,54 @@
 			}
 		}
 
-		public mounted() {
-			this.loadIssues();
+		public async mounted() {
+			this.loading = true;
 			this.loadUsers();
-			this.loadMilestones();
 			this.loadLabels();
 			this.loadProject();
+			await this.loadMilestones();
+
+			// load issues after milestones
+			await this.loadIssues();
+			this.loading = false;
 		}
 
-		public loadIssues() {
-			axios.get(this.API_PATH + '/issues').then((response) => {
-				this.$store.commit('SET_ISSUES', response.data);
-			})
-		}
-
-		public loadUsers() {
-			axios.get(this.API_PATH + '/users').then((response) => {
-				let filtered = response.data.filter((user: IUser) => {
-					return user.state === 'active';
-				});
-				this.$store.commit('SET_USERS', filtered);
-			})
-		}
-
-		public loadLabels() {
-			axios.get(this.API_PATH + '/labels').then((response) => {
-				this.$store.commit('SET_LABELS', response.data)
-			})
-		}
-
-		public loadProject() {
-			axios.get(this.API_PATH + '/project').then((response) => {
-				this.$store.commit('SET_PROJECT', response.data)
-			})
-		}
-
-		public loadMilestones() {
-			axios.get(this.API_PATH + '/milestones').then((response) => {
-				this.$store.commit('SET_MILESTONES', response.data);
-				if (this.milestones.length) {
-					this.selectedMilestone = this.milestones[0].id;
+		public async loadIssues() {
+			let url = this.API_PATH + '/issues';
+			if (this.milestones.length) {
+				let selected = this.milestones.filter(milestone => milestone.id == this.selectedMilestone);
+				if (selected.length > 0) {
+					url += '?milestone=' + encodeURIComponent(selected[0].title)
 				}
-			})
+			}
+			let response = await axios.get(url);
+			this.$store.commit('SET_ISSUES', response.data);
+		}
+
+		public async loadUsers() {
+			let response = await axios.get(this.API_PATH + '/users');
+			let filtered = response.data.filter((user: IUser) => {
+				return user.state === 'active';
+			});
+			this.$store.commit('SET_USERS', filtered);
+		}
+
+		public async loadLabels() {
+			let response = await axios.get(this.API_PATH + '/labels');
+			this.$store.commit('SET_LABELS', response.data)
+		}
+
+		public async loadProject() {
+			let response = await axios.get(this.API_PATH + '/project');
+			this.$store.commit('SET_PROJECT', response.data)
+		}
+
+		public async loadMilestones() {
+			let response = await axios.get(this.API_PATH + '/milestones');
+			this.$store.commit('SET_MILESTONES', response.data);
+			if (this.milestones.length) {
+				this.selectedMilestone = this.milestones[0].id;
+			}
 		}
 
 		public closeIssue() {
@@ -257,6 +271,11 @@
 				this.$store.commit('SET_ISSUE', { index: index, value: response.data })
 			});
 			return false;
+		}
+
+		@Watch('selectedMilestone')
+		public watchMilestone() {
+			this.loadIssues();
 		}
 
 		// keyboard navigation

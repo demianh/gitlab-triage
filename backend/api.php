@@ -44,6 +44,16 @@ $app->get('/users', function (Request $request, Response $response, array $args)
 });
 $app->get('/issues', function (Request $request, Response $response, array $args) use ($client) {
 	$instance = new \Gitlab\Api\Issues($client);
+	$issues = loadIssues($instance, 'None');
+
+	if (isset($request->getQueryParams()['milestone'])) {
+		$issues = array_merge($issues, loadIssues($instance, $request->getQueryParams()['milestone']));
+	}
+
+	return $response->withJson($issues);
+});
+
+function loadIssues($instance, $milestone) {
 	$issues = [];
 
 	// load more than 100 issues
@@ -53,7 +63,7 @@ $app->get('/issues', function (Request $request, Response $response, array $args
 			'state' => 'opened',
 			'per_page' => 100,
 			'page' => $page,
-			'milestone' => 'None',
+			'milestone' => $milestone,
 		]);
 		if (count($paged_issues) > 0) {
 			foreach ($paged_issues as $issue) {
@@ -83,8 +93,9 @@ $app->get('/issues', function (Request $request, Response $response, array $args
 		}
 		$issues = $filtered;
 	}
-	return $response->withJson($issues);
-});
+	return $issues;
+}
+
 $app->get('/issue/{id}', function (Request $request, Response $response, array $args) use ($client) {
 	$issues = new \Gitlab\Api\Issues($client);
 	$result = $issues->show(GITLAB_PROJECT_ID, $args['id']);
