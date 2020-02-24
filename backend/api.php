@@ -29,6 +29,17 @@ $app->add(function ($req, $res, $next) {
 $app->get('/users', function (Request $request, Response $response, array $args) use ($client) {
 	$instance = new \Gitlab\Api\Users($client);
 	$users = $instance->all();
+
+	// apply user filter
+	if (isset($GLOBALS['_FILTERED_USERS']) && is_array($GLOBALS['_FILTERED_USERS'])) {
+		$filtered = [];
+		foreach ($users as $user) {
+			if (!in_array($user['username'], $GLOBALS['_FILTERED_USERS'])) {
+				$filtered[] = $user;
+			}
+		}
+		$users = $filtered;
+	}
 	return $response->withJson($users);
 });
 $app->get('/issues', function (Request $request, Response $response, array $args) use ($client) {
@@ -52,6 +63,25 @@ $app->get('/issues', function (Request $request, Response $response, array $args
 			break;
 		}
 		$page++;
+	}
+
+	// apply label filter
+	if (isset($GLOBALS['_FILTERED_LABELS']) && is_array($GLOBALS['_FILTERED_LABELS'])) {
+		$filtered = [];
+		foreach ($issues as $issue) {
+			$show = true;
+			if (isset($issue['labels']) && count($issue['labels'])) {
+				foreach ($issue['labels'] as $label) {
+					if (in_array($label, $GLOBALS['_FILTERED_LABELS'])) {
+						$show = false;
+					}
+				}
+			}
+			if ($show) {
+				$filtered[] = $issue;
+			}
+		}
+		$issues = $filtered;
 	}
 	return $response->withJson($issues);
 });

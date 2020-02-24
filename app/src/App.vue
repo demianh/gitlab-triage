@@ -186,10 +186,8 @@
 
 		public loadUsers() {
 			axios.get(this.API_PATH + '/users').then((response) => {
-				// TODO: make user filter configurable
-				let hiddenUsers: string[] = ['ghost', 'internalreadonly', 'alert-bot'];
 				let filtered = response.data.filter((user: IUser) => {
-					return hiddenUsers.indexOf(user.username) < 0 && user.state === 'active';
+					return user.state === 'active';
 				});
 				this.$store.commit('SET_USERS', filtered);
 			})
