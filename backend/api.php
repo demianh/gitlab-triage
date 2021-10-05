@@ -7,7 +7,9 @@ require './_config.php';
 
 header("Access-Control-Allow-Origin: *");
 
-$client = \Gitlab\Client::create(GITLAB_URL)->authenticate(GITLAB_TOKEN, \Gitlab\Client::AUTH_URL_TOKEN);
+$client = new Gitlab\Client();
+$client->setUrl(GITLAB_URL);
+$client->authenticate(GITLAB_TOKEN, Gitlab\Client::AUTH_HTTP_TOKEN);
 
 $configuration = [
 	'settings' => [
