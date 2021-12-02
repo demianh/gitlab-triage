@@ -36,8 +36,7 @@
 
 <style scoped lang="less">
 .print-view {
-	display: flex;
-	flex-wrap: wrap;
+	display: table;
 	padding: 10px 0;
 }
 .issue-print-card {
@@ -48,8 +47,10 @@
 	width: 200px;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	display: flex;
+	display: inline-flex;
 	flex-direction: column;
+	min-height: 155px;
+	vertical-align: top;
 }
 .issue-number {
 	color: #ccc;

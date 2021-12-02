@@ -68,7 +68,7 @@
 			</div>
 			<div v-if="view === 'print'" class="container-fluid">
 				<print-view></print-view>
-				<div class="text-muted text-center">
+				<div class="text-muted text-center d-print-none">
 					<a @click="view = 'issues'">Show List</a>&nbsp;
 					Sort by:
 					<a @click="sortById()">Age</a>&nbsp;
