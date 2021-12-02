@@ -105,9 +105,10 @@
 		padding: 40px;
 
 		@media (max-width: 767px) {
-			padding: 20px;
 			margin: 0;
 			margin-bottom: 20px;
+			box-shadow: none;
+			padding: 20px 0;
 		}
 	}
 </style>

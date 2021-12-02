@@ -4,14 +4,16 @@
 			Loading Data from Gitlab ...
 		</div>
 		<div v-else>
-			<div v-if="view === 'issues'" class="container">
-				<div class="nav-menue">
+			<div v-if="view === 'issues'" class="container issues">
+				<header class="nav-menue">
 					<div class="row">
 						<div class="col">
 							<button @click="previousIssue()" class="btn btn-outline-secondary">Zurück</button>
 						</div>
 						<div class="col text-center">
-							Target Milestone:
+							<span class="d-none d-sm-inline">
+								Target Milestone:
+							</span>
 							<select v-model="selectedMilestone">
 								<option v-for="milestone in milestones" :value="milestone.id">{{milestone.title}}</option>
 							</select>
@@ -53,9 +55,13 @@
 							<button v-if="issueState === 'closed'" class="btn btn-outline-success mb-1" @click="reopenIssue()">Reopen</button>
 						</div>
 					</div>
-				</div>
-				<issue-viewer :issue="selectedIssue"></issue-viewer>
-				<div class="text-muted text-center">
+				</header>
+				<main>
+					<transition :name="animation" v-if="selectedIssue">
+						<issue-viewer :issue="selectedIssue" :key="selectedIssue.id"></issue-viewer>
+					</transition>
+				</main>
+				<footer class="text-muted text-center pb-2">
 					Issue {{selectedIndex + 1}} von {{issues.length}} &middot;
 					<a @click="loadIssues()">Reload All</a> &middot;
 					<a @click="reloadIssue()">Reload Issue</a> &middot;
@@ -64,19 +70,21 @@
 					<a @click="sortById()">Age</a>&nbsp;
 					<a @click="sortByWeight()">Weight</a>&nbsp;
 					<a @click="sortRandom()">Random</a>&nbsp;
-				</div>
+				</footer>
 			</div>
 			<div v-if="view === 'print'" class="container-fluid">
-				<print-view></print-view>
-				<div class="text-muted text-center d-print-none">
+				<main>
+					<print-view></print-view>
+				</main>
+				<footer class="text-muted text-center d-print-none">
 					<a @click="view = 'issues'">Show List</a>&nbsp;
 					Sort by:
 					<a @click="sortById()">Age</a>&nbsp;
 					<a @click="sortByWeight()">Weight</a>&nbsp;
-				</div>
+				</footer>
 			</div>
 			<div v-if="view === 'list'" class="container-fluid">
-				<div class="nav-menue">
+				<header class="nav-menue">
 					<div class="row">
 						<div class="col text-center">
 							Target Milestone:
@@ -86,13 +94,15 @@
 							&nbsp;<button @click="view = 'issues'" class="btn btn-outline-secondary">Show Issues</button>
 						</div>
 					</div>
-				</div>
-				<issue-list></issue-list>
-				<div class="text-muted text-center">
+				</header>
+				<main>
+					<issue-list></issue-list>
+				</main>
+				<footer class="text-muted text-center">
 					Sort by:
 					<a @click="sortById()">Age</a>&nbsp;
 					<a @click="sortByWeight()">Weight</a>&nbsp;
-				</div>
+				</footer>
 			</div>
 		</div>
 	</div>
@@ -122,6 +132,8 @@
 		public view: string = 'issues';
 
 		public loading: boolean = false;
+
+		public animation: string = 'forward';
 
 		get API_PATH(): string {
 			return this.$store.state.API_PATH;
@@ -183,12 +195,14 @@
 		}
 
 		public previousIssue() {
+			this.animation = 'back';
 			if (this.selectedIndex > 0) {
 				this.selectedIndex--;
 			}
 		}
 
 		public nextIssue() {
+			this.animation = 'forward';
 			if (this.selectedIndex < this.issues.length - 1) {
 				this.selectedIndex++;
 			}
@@ -398,5 +412,36 @@
 	.avatar {
 		width: 16px;
 		border-radius: 10px;
+	}
+
+	.issues {
+		display: flex;
+		flex-direction: column;
+		min-height: 100vh;
+		main {
+			flex: 1;
+			overflow: hidden;
+			max-width: 1070px;
+		}
+	}
+
+	.forward-enter-active,
+	.forward-leave-active,
+	.back-enter-active,
+	.back-leave-active {
+		transition: opacity 0.4s, transform 0.4s;
+		transform: translateX(0);
+	}
+	.back-enter,
+	.forward-leave-to {
+		position: fixed;
+		opacity: 0;
+		transform: translateX(-1100px);
+	}
+	.back-leave-to,
+	.forward-enter {
+		position: fixed;
+		opacity: 0;
+		transform: translateX(1100px);
 	}
 </style>
