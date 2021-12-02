@@ -59,10 +59,20 @@
 					Issue {{selectedIndex + 1}} von {{issues.length}} &middot;
 					<a @click="loadIssues()">Reload All</a> &middot;
 					<a @click="reloadIssue()">Reload Issue</a> &middot;
+					<a @click="view = 'print'">Print</a> &middot;
 					Sort by:
 					<a @click="sortById()">Age</a>&nbsp;
 					<a @click="sortByWeight()">Weight</a>&nbsp;
 					<a @click="sortRandom()">Random</a>&nbsp;
+				</div>
+			</div>
+			<div v-if="view === 'print'" class="container-fluid">
+				<print-view></print-view>
+				<div class="text-muted text-center">
+					<a @click="view = 'issues'">Show List</a>&nbsp;
+					Sort by:
+					<a @click="sortById()">Age</a>&nbsp;
+					<a @click="sortByWeight()">Weight</a>&nbsp;
 				</div>
 			</div>
 			<div v-if="view === 'list'" class="container-fluid">
@@ -95,9 +105,11 @@
 	import IIssue from "@/interfaces/IIssue";
 	import IssueList from "@/components/IssueList.vue";
 	import IUser from "@/interfaces/IUser";
+	import PrintView from "@/components/PrintView.vue";
 
 	@Component({
 		components: {
+			PrintView,
 			IssueViewer,
 			IssueList,
 		},
