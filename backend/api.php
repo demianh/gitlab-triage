@@ -134,6 +134,9 @@ $app->post('/assign_issue/{id}', function (Request $request, Response $response,
 	if (isset($body['milestone'])) {
 		$data['milestone_id'] = $body['milestone'];
 	}
+	if (isset($body['labels'])) {
+		$data['labels'] = $body['labels'];
+	}
 	$result = $issues->update(GITLAB_PROJECT_ID, $args['id'], $data);
 	return $response->withJson($result);
 });

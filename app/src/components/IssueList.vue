@@ -48,12 +48,17 @@
 		}
 
 		public unassignIssue(index: number) {
-			let postdata = {
+			let selectedIssue = this.issues[index];
+			let postdata: any = {
 				milestone: 0,
 				user: 0
 			};
 
-			let selectedIssue = this.issues[index];
+			// remove Prio Labels when unassigning
+			if (selectedIssue.labels) {
+				postdata.labels = selectedIssue.labels.filter(label => label !== 'Prio 1' && label !== 'Prio 2' && label !== 'Prio 3');
+			}
+
 			axios.post(this.$store.state.API_PATH + '/assign_issue/' + selectedIssue.iid, postdata).then((response) => {
 				this.$store.commit('SET_ISSUE', { index: index, value: response.data })
 			})
