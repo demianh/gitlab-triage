@@ -57,7 +57,7 @@ $app->get('/issues', function (Request $request, Response $response, array $args
 	return $response->withJson($issues);
 });
 
-function loadIssues($instance, $milestone) {
+function loadIssues($instance, $milestone = '') {
 	$issues = [];
 
 	// load more than 100 issues
@@ -108,6 +108,9 @@ $app->get('/issue/{id}', function (Request $request, Response $response, array $
 $app->get('/milestones', function (Request $request, Response $response, array $args) use ($client) {
 	$instance = new \Gitlab\Api\Milestones($client);
 	$milestones = $instance->all(GITLAB_PROJECT_ID, ['state' => 'active']);
+	usort($milestones, function ($a, $b) {
+		return strcmp($b['title'], $a['title']);
+	});
 	return $response->withJson($milestones);
 });
 $app->get('/labels', function (Request $request, Response $response, array $args) use ($client) {

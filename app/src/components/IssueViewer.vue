@@ -8,7 +8,7 @@
 			</h3>
 			<div>
 				<span v-if="project">
-					<a :href="project.web_url + '/issues/' + issue.iid" target="_blank">
+					<a :href="project.web_url + '/-/issues/' + issue.iid" target="_blank">
 						Open #{{issue.iid}} in Gitlab
 					</a>
 				</span>
