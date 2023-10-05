@@ -1,7 +1,7 @@
 <template>
 	<div class="issue-list">
 		<div class="row">
-			<div class="col" v-for="user in users">
+			<div class="col" v-for="user in users" v-if="hasIssues(user.id)">
 				<div class="username">
 					<img :src="user.avatar_url" class="avatar"/>
 					{{user.name}}
@@ -45,6 +45,10 @@
 
 		get weightPerPerson(): {[key: number]: number} {
 			return this.$store.getters.weightPerPerson;
+		}
+
+		public hasIssues(userId: number): boolean {
+			return this.issues.some(issue => issue.assignees.length > 0 && issue.assignees.some(assignee => assignee.id === userId));
 		}
 
 		public unassignIssue(index: number) {
