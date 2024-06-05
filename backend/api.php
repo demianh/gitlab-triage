@@ -33,6 +33,7 @@ $app->add(function ($req, $res, $next) {
 $app->get('/users', function (Request $request, Response $response, array $args) use ($client) {
 	$instance = new \Gitlab\Api\Users($client);
 	$users = $instance->all();
+	//$users = $instance->all(['without_project_bots' => true]);
 
 	// apply user filter
 	if (isset($GLOBALS['_FILTERED_USERS']) && is_array($GLOBALS['_FILTERED_USERS'])) {
