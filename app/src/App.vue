@@ -18,6 +18,7 @@
 								<option v-for="milestone in milestones" :value="milestone.id">{{milestone.title}}</option>
 							</select>
 							&nbsp;<button @click="view = 'list'" class="btn btn-outline-secondary">Show List</button>
+							&nbsp;<button @click="view = 'search'" class="btn btn-outline-secondary">🔍</button>
 						</div>
 						<div class="col text-right">
 							<button @click="nextIssue()" class="btn btn-outline-secondary">Weiter</button>
@@ -104,6 +105,45 @@
 					<a @click="sortByWeight()">Weight</a>&nbsp;
 				</footer>
 			</div>
+			<div v-if="view === 'search'" class="container">
+				<header class="nav-menue">
+					<div class="row">
+						<div class="col text-center">
+							<button @click="view = 'issues'" class="btn btn-outline-secondary">Show Issues</button>
+						</div>
+					</div>
+				</header>
+				<div class="issue-search">
+					<input type="search" class="issue-search__input" placeholder="Search" v-model="search" ref="search" autofocus/>
+				</div>
+				<div class="issue-list">
+					<div v-for="issue in filteredIssues">
+						<div class="issue-list__item">
+							<div class="row">
+								<div class="col">
+									<a @click="goToIssue(issue.id)">
+										#{{issue.id}}
+									</a>
+									{{issue.title}}
+								</div>
+								<div class="col text-right">
+									<a :href="issue.web_url" target="_blank">Gitlab</a>
+								</div>
+							</div>
+							<div class="small mt-1">
+								<span v-if="issue.assignees.length > 0" class="mr-2">
+									<span v-for="assignee in issue.assignees">
+										<img :src="assignee.avatar_url" class="avatar"/>
+										{{assignee.name}}
+									</span>
+								</span>
+								<span v-if="issue.weight" class="badge badge-light mr-2">🕑 {{issue.weight}}</span>
+								<span v-if="issue.milestone" class="mr-2">Milestone {{issue.milestone.title}}</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
 </template>
@@ -134,6 +174,8 @@
 		public loading: boolean = false;
 
 		public animation: string = 'forward';
+
+		public search: string = '';
 
 		get API_PATH(): string {
 			return this.$store.state.API_PATH;
@@ -206,6 +248,12 @@
 			if (this.selectedIndex < this.issues.length - 1) {
 				this.selectedIndex++;
 			}
+		}
+
+		public goToIssue(issueId: number) {
+			this.selectedIndex= this.issues.findIndex(issue => issue.id === issueId);
+			this.view = 'issues';
+			window.scrollTo(0, 0);
 		}
 
 		public async mounted() {
@@ -308,6 +356,16 @@
 			this.loadIssues();
 		}
 
+		@Watch('view')
+		public watchView() {
+			if (this.view === 'search') {
+				this.$nextTick(() => {
+					(this.$refs.search as HTMLInputElement).focus();
+				});
+
+			}
+		}
+
 		// keyboard navigation
 		public created() {
 			this.keyHandler = (e: KeyboardEvent) => {
@@ -371,6 +429,20 @@
 			return array;
 		}
 
+		get filteredIssues() {
+			if (this.search === '') {
+				return this.issues;
+			}
+			// filter issues by search string
+			// split string by spaces and search for each word
+			let searchWords = this.search.split(' ');
+			return this.issues.filter(issue => {
+				return searchWords.every(word => {
+					return issue.title.toLowerCase().includes(word.toLowerCase());
+				});
+			});
+		}
+
 	}
 </script>
 
@@ -412,6 +484,8 @@
 	.avatar {
 		width: 16px;
 		border-radius: 10px;
+		position: relative;
+		top: -2px;
 	}
 
 	.issues {
@@ -443,5 +517,21 @@
 		position: fixed;
 		opacity: 0;
 		transform: translateX(1100px);
+	}
+
+	.issue-search__input {
+		width: 100%;
+		padding: 10px;
+		font-size: 1.2em;
+		border-radius: 6px;
+		border: 1px solid #ccc;
+		margin-bottom: 20px;
+	}
+
+	.issue-list__item {
+		box-shadow: 1px 1px 6px rgba(0, 0, 0, 0.2);
+		border-radius: 6px;
+		padding: 10px;
+		margin-bottom: 10px;
 	}
 </style>
