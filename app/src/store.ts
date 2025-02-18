@@ -51,12 +51,14 @@ export default new Vuex.Store({
 				state.issues.forEach((issue: IIssue) => {
 					if (issue.weight) {
 						if (issue.assignees.length > 0) {
-							let userid = issue.assignees[0].id;
-							if (weights[userid]) {
-								weights[userid] += issue.weight
-							} else {
-								weights[userid] = issue.weight
-							}
+							issue.assignees.forEach((assignee) => {
+								let userid = assignee.id;
+								if (weights[userid]) {
+									weights[userid] += issue.weight
+								} else {
+									weights[userid] = issue.weight
+								}
+							})
 						}
 					}
 				})
