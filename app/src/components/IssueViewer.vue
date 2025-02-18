@@ -78,7 +78,8 @@
 		get description() {
 			if (this.issue && this.project) {
 				if (this.issue.description) {
-					return this.issue.description.replace('(/uploads/', '(' + this.project.web_url + '/uploads/');
+					let domain = new URL(this.project.web_url).origin;
+					return this.issue.description.replace('(/uploads/', '(' + domain + '/-/project/' + this.project.id + '/uploads/');
 				}
 			}
 			return '';
