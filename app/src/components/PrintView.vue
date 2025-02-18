@@ -21,15 +21,16 @@
 	import {Component, Vue} from 'vue-property-decorator';
 	import IIssue from "@/interfaces/IIssue";
 	import axios from 'axios';
+	import useStore from '@/useStore';
 
 	@Component({})
 	export default class PrintView extends Vue {
 		get issues(): IIssue[] {
-			return this.$store.state.issues;
+			return useStore.state.issues;
 		}
 
 		get project() {
-			return this.$store.state.project;
+			return useStore.state.project;
 		}
 	}
 </script>

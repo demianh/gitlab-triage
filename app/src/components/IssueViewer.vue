@@ -46,6 +46,7 @@
 	import VueMarkdown from 'vue-markdown'
 	import axios from 'axios';
 	import IIssue from "@/interfaces/IIssue";
+	import useStore from '@/useStore';
 
 	@Component({
 		components: {
@@ -56,23 +57,23 @@
 		@Prop() private issue!: IIssue;
 
 		get API_PATH(): string {
-			return this.$store.state.API_PATH;
+			return useStore.state.API_PATH;
 		}
 
 		get labels() {
-			return this.$store.state.labels;
+			return useStore.state.labels;
 		}
 
 		get project() {
-			return this.$store.state.project;
+			return useStore.state.project;
 		}
 
 		get selectedIndex(): number {
-			return this.$store.state.selectedIssueIndex;
+			return useStore.state.selectedIssueIndex;
 		}
 
 		get selectedMilestone(): number {
-			return this.$store.state.selectedMilestone;
+			return useStore.state.selectedMilestone;
 		}
 
 		get description() {
@@ -92,7 +93,7 @@
 
 			let index = this.selectedIndex;
 			axios.post(this.API_PATH + '/assign_issue/' + this.issue.iid, postdata).then((response) => {
-				this.$store.commit('SET_ISSUE', { index: index, value: response.data })
+				useStore.setIssue(index, response.data);
 			})
 		}
 	}

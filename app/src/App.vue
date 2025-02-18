@@ -156,6 +156,7 @@
 	import IssueList from "@/components/IssueList.vue";
 	import IUser from "@/interfaces/IUser";
 	import PrintView from "@/components/PrintView.vue";
+	import useStore from '@/useStore'
 
 	@Component({
 		components: {
@@ -178,35 +179,35 @@
 		public search: string = '';
 
 		get API_PATH(): string {
-			return this.$store.state.API_PATH;
+			return useStore.state.API_PATH;
 		}
 
 		get issues(): IIssue[] {
-			return this.$store.state.issues;
+			return useStore.state.issues;
 		}
 
 		get users(): IUser[] {
-			return this.$store.state.users;
+			return useStore.state.users;
 		}
 
 		get milestones(): any[] {
-			return this.$store.state.milestones;
+			return useStore.state.milestones;
 		}
 
 		get selectedMilestone(): number {
-			return this.$store.state.selectedMilestone;
+			return useStore.state.selectedMilestone;
 		}
 
 		set selectedMilestone(milestone: number) {
-			this.$store.commit('SET_SELECTED_MILESTONE', milestone);
+			useStore.setSelectedMilestone(milestone);
 		}
 
 		get selectedIndex(): number {
-			return this.$store.state.selectedIssueIndex;
+			return useStore.state.selectedIssueIndex;
 		}
 
 		set selectedIndex(index: number) {
-			this.$store.commit('SET_SELECTED_ISSUE_INDEX', index);
+			useStore.setSelectedIssueIndex(index);
 		}
 
 		get selectedIssue(): IIssue {
@@ -233,7 +234,7 @@
 		}
 
 		get weightPerPerson(): {[key: number]: number} {
-			return this.$store.getters.weightPerPerson;
+			return useStore.weightPerPerson.value;
 		}
 
 		public previousIssue() {
@@ -277,7 +278,7 @@
 				}
 			}
 			let response = await axios.get(url);
-			this.$store.commit('SET_ISSUES', response.data);
+			useStore.setIssues(response.data);
 		}
 
 		public async loadUsers() {
@@ -285,22 +286,22 @@
 			let filtered = response.data.filter((user: IUser) => {
 				return user.state === 'active';
 			});
-			this.$store.commit('SET_USERS', filtered);
+			useStore.setUsers(filtered);
 		}
 
 		public async loadLabels() {
 			let response = await axios.get(this.API_PATH + '/labels');
-			this.$store.commit('SET_LABELS', response.data)
+			useStore.setLabels(response.data);
 		}
 
 		public async loadProject() {
 			let response = await axios.get(this.API_PATH + '/project');
-			this.$store.commit('SET_PROJECT', response.data)
+			useStore.setProject(response.data);
 		}
 
 		public async loadMilestones() {
 			let response = await axios.get(this.API_PATH + '/milestones');
-			this.$store.commit('SET_MILESTONES', response.data);
+			useStore.setMilestones(response.data);
 			if (this.milestones.length) {
 				this.selectedMilestone = this.milestones[0].id;
 			}
@@ -309,14 +310,14 @@
 		public closeIssue() {
 			let index = this.selectedIndex;
 			axios.post(this.API_PATH + '/close_issue/' + this.selectedIssue.iid).then((response) => {
-				this.$store.commit('SET_ISSUE', { index: index, value: response.data })
+				useStore.setIssue(index, response.data);
 			})
 		}
 
 		public reopenIssue(issueId: number) {
 			let index = this.selectedIndex;
 			axios.post(this.API_PATH + '/reopen_issue/' + this.selectedIssue.iid).then((response) => {
-				this.$store.commit('SET_ISSUE', { index: index, value: response.data })
+				useStore.setIssue(index, response.data);
 			})
 		}
 
@@ -339,14 +340,14 @@
 
 			let index = this.selectedIndex;
 			axios.post(this.API_PATH + '/assign_issue/' + this.selectedIssue.iid, postdata).then((response) => {
-				this.$store.commit('SET_ISSUE', { index: index, value: response.data })
+				useStore.setIssue(index, response.data);
 			})
 		}
 
 		public reloadIssue() {
 			let index = this.selectedIndex;
 			axios.get(this.API_PATH + '/issue/' + this.selectedIssue.iid).then((response) => {
-				this.$store.commit('SET_ISSUE', { index: index, value: response.data })
+				useStore.setIssue(index, response.data);
 			});
 			return false;
 		}
@@ -391,7 +392,7 @@
 					return b.id - a.id;
 				}
 			});
-			this.$store.commit('SET_ISSUES', sorted);
+			useStore.setIssues(sorted);
 			this.sortInverse = !this.sortInverse;
 		}
 
@@ -403,12 +404,12 @@
 					return b.weight - a.weight;
 				}
 			});
-			this.$store.commit('SET_ISSUES', sorted);
+			useStore.setIssues(sorted);
 			this.sortInverse = !this.sortInverse;
 		}
 
 		public sortRandom() {
-			this.$store.commit('SET_ISSUES', this.shuffleArray(this.issues));
+			useStore.setIssues(this.shuffleArray(this.issues));
 		}
 
 		private shuffleArray(array: any[]) {

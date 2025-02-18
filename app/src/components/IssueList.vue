@@ -28,23 +28,24 @@
 	import {Component, Vue} from 'vue-property-decorator';
 	import IIssue from "@/interfaces/IIssue";
 	import axios from 'axios';
+	import useStore from '@/useStore'
 
 	@Component({})
 	export default class IssueList extends Vue {
 		get users(): any[] {
-			return this.$store.state.users;
+			return useStore.state.users;
 		}
 
 		get issues(): IIssue[] {
-			return this.$store.state.issues;
+			return useStore.state.issues;
 		}
 
 		get project() {
-			return this.$store.state.project;
+			return useStore.state.project;
 		}
 
 		get weightPerPerson(): {[key: number]: number} {
-			return this.$store.getters.weightPerPerson;
+			return useStore.weightPerPerson.value;
 		}
 
 		public hasIssues(userId: number): boolean {
@@ -63,8 +64,8 @@
 				postdata.labels = selectedIssue.labels.filter(label => label !== 'Prio 1' && label !== 'Prio 2' && label !== 'Prio 3');
 			}
 
-			axios.post(this.$store.state.API_PATH + '/assign_issue/' + selectedIssue.iid, postdata).then((response) => {
-				this.$store.commit('SET_ISSUE', { index: index, value: response.data })
+			axios.post(useStore.state.API_PATH + '/assign_issue/' + selectedIssue.iid, postdata).then((response) => {
+				useStore.setIssue(index, response.data);
 			})
 		}
 	}
