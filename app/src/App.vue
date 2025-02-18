@@ -113,36 +113,49 @@
 						</div>
 					</div>
 				</header>
-				<div class="issue-search">
-					<input type="search" class="issue-search__input" placeholder="Search" v-model="search" ref="search" autofocus/>
-				</div>
-				<div class="issue-list">
-					<div v-for="issue in filteredIssues">
-						<div class="issue-list__item">
-							<div class="row">
-								<div class="col">
-									<a @click="goToIssue(issue.id)">
-										#{{issue.id}}
-									</a>
-									{{issue.title}}
+				<main>
+
+					<div class="issue-search">
+						<input type="search" class="issue-search__input" placeholder="Search" v-model="search" ref="search" autofocus/>
+					</div>
+					<div class="issue-list">
+						<div v-for="issue in filteredIssues">
+							<div class="issue-list__item">
+								<div class="row">
+									<div class="col-11">
+										<h5>
+											<a @click="goToIssue(issue.id)">
+												#{{issue.id}}
+											</a>
+											{{issue.title}}
+										</h5>
+									</div>
+									<div class="col text-right">
+										<a :href="issue.web_url" target="_blank">Gitlab</a>
+									</div>
 								</div>
-								<div class="col text-right">
-									<a :href="issue.web_url" target="_blank">Gitlab</a>
-								</div>
-							</div>
-							<div class="small mt-1">
-								<span v-if="issue.assignees.length > 0" class="mr-2">
-									<span v-for="assignee in issue.assignees">
-										<img :src="assignee.avatar_url" class="avatar"/>
-										{{assignee.name}}
+								<div>
+									<span v-if="issue.weight" class="badge badge-light mr-2">🕑 {{issue.weight}}</span>
+									<span v-if="issue.assignees.length > 0" class="mr-2">
+										<span v-for="assignee in issue.assignees">
+											<img :src="assignee.avatar_url" class="avatar"/>
+											{{assignee.name}}
+										</span>
 									</span>
-								</span>
-								<span v-if="issue.weight" class="badge badge-light mr-2">🕑 {{issue.weight}}</span>
-								<span v-if="issue.milestone" class="mr-2">Milestone {{issue.milestone.title}}</span>
+									<span v-if="issue.milestone" class="mr-2">Milestone {{issue.milestone.title}}</span>
+									<span v-for="label in issue.labels">
+										<span class="badge badge-pill badge-dark" :style="{backgroundColor: labels[label] ? labels[label].color : 'inherit'}">{{label}}</span>&nbsp;
+									</span>
+								</div>
 							</div>
 						</div>
 					</div>
-				</div>
+				</main>
+				<footer class="text-muted text-center">
+					Sort by:
+					<a @click="sortById()">Age</a>&nbsp;
+					<a @click="sortByWeight()">Weight</a>&nbsp;
+				</footer>
 			</div>
 		</div>
 	</div>
@@ -188,6 +201,10 @@
 
 		get users(): IUser[] {
 			return useStore.state.users;
+		}
+
+		get labels() {
+			return useStore.state.labels;
 		}
 
 		get milestones(): any[] {

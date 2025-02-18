@@ -20,11 +20,11 @@
 				Milestone:
 				<b v-if="issue.milestone">{{issue.milestone.title}}</b>
 				<span v-if="!issue.milestone">
-					<a @click="setMilestone()">Set Milestone</a>
+					<a @click="setMilestone()">Set Milestone {{selectedMilestoneName}}</a>
 				</span>
 			</div>
 			<div class="text-muted">
-				Weight: <b>{{issue.weight}}</b>
+				Weight: <b v-if="issue.weight !== null">🕑 {{issue.weight}}</b>
 			</div>
 			<hr>
 			<div class="issue-description">
@@ -68,12 +68,20 @@
 			return useStore.state.project;
 		}
 
+		get milestones(): any[] {
+			return useStore.state.milestones;
+		}
+
 		get selectedIndex(): number {
 			return useStore.state.selectedIssueIndex;
 		}
 
 		get selectedMilestone(): number {
 			return useStore.state.selectedMilestone;
+		}
+
+		get selectedMilestoneName(): string {
+			return this.milestones.find(milestone => milestone.id === this.selectedMilestone)?.title || '';
 		}
 
 		get description() {
