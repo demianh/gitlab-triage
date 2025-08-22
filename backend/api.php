@@ -116,7 +116,7 @@ $app->get('/milestones', function (Request $request, Response $response, array $
 });
 $app->get('/labels', function (Request $request, Response $response, array $args) use ($client) {
 	$instance = new \Gitlab\Api\Projects($client);
-	$labels = $instance->labels(GITLAB_PROJECT_ID);
+	$labels = $instance->labels(GITLAB_PROJECT_ID, ['per_page' => 100]);
 	$labels_indexed = [];
 	foreach ($labels as $label) {
 		$labels_indexed[$label['name']] = $label;

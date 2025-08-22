@@ -7,20 +7,27 @@
 			<div v-if="view === 'issues'" class="container issues">
 				<header class="nav-menue">
 					<div class="row">
-						<div class="col">
+						<div class="col-1">
 							<button @click="previousIssue()" class="btn btn-outline-secondary">Zurück</button>
 						</div>
-						<div class="col text-center">
-							<span class="d-none d-sm-inline">
+						<div class="col-12 col-sm-10 text-center form-inline justify-content-center">
+							<span class="d-none d-sm-inline mx-2">
 								Target Milestone:
 							</span>
-							<select v-model="selectedMilestone">
+							<select v-model="selectedMilestone" class="form-control mr-2">
 								<option v-for="milestone in milestones" :value="milestone.id">{{milestone.title}}</option>
+							</select>
+							<span class="d-none d-sm-inline mx-2">
+								Filter:
+							</span>
+							<select v-model="selectedFilter" class="form-control mr-2">
+								<option value="all">All</option>
+								<option value="next">NEXT</option>
 							</select>
 							&nbsp;<button @click="view = 'list'" class="btn btn-outline-secondary">Show List</button>
 							&nbsp;<button @click="view = 'search'" class="btn btn-outline-secondary">🔍</button>
 						</div>
-						<div class="col text-right">
+						<div class="col-1 text-right">
 							<button @click="nextIssue()" class="btn btn-outline-secondary">Weiter</button>
 						</div>
 					</div>
@@ -87,9 +94,9 @@
 			<div v-if="view === 'list'" class="container-fluid">
 				<header class="nav-menue">
 					<div class="row">
-						<div class="col text-center">
+						<div class="col text-center form-inline justify-content-center">
 							Target Milestone:
-							<select v-model="selectedMilestone">
+							<select v-model="selectedMilestone" class="form-control mx-2">
 								<option v-for="milestone in milestones" :value="milestone.id">{{milestone.title}}</option>
 							</select>
 							&nbsp;<button @click="view = 'issues'" class="btn btn-outline-secondary">Show Issues</button>
@@ -108,13 +115,19 @@
 			<div v-if="view === 'search'" class="container">
 				<header class="nav-menue">
 					<div class="row">
-						<div class="col text-center">
+						<div class="col text-center form-inline justify-content-center">
+							<span class="d-none d-sm-inline">
+								Filter:
+							</span>
+							<select v-model="selectedFilter" class="ml-2 mr-4 form-control">
+								<option value="all">All</option>
+								<option value="next">NEXT</option>
+							</select>
 							<button @click="view = 'issues'" class="btn btn-outline-secondary">Show Issues</button>
 						</div>
 					</div>
 				</header>
 				<main>
-
 					<div class="issue-search">
 						<input type="search" class="issue-search__input" placeholder="Search" v-model="search" ref="search" autofocus/>
 					</div>
@@ -191,11 +204,16 @@
 
 		public search: string = '';
 
+		public selectedFilter: string = 'next';
+
 		get API_PATH(): string {
 			return useStore.state.API_PATH;
 		}
 
 		get issues(): IIssue[] {
+			if (this.selectedFilter === 'next') {
+				return useStore.state.issues.filter(issue => issue.labels.includes('NEXT'));
+			}
 			return useStore.state.issues;
 		}
 
@@ -372,6 +390,11 @@
 		@Watch('selectedMilestone')
 		public watchMilestone() {
 			this.loadIssues();
+		}
+
+		@Watch('selectedFilter')
+		public watchSelectedFilter() {
+			this.selectedIndex = 0;
 		}
 
 		@Watch('view')

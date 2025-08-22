@@ -2,10 +2,20 @@
 	<div class="issue-viewer">
 		<div v-if="issue">
 
-			<h3>
-				{{issue.title}}
-				<span v-if="issue.state === 'closed'" class="text-danger">(closed)</span>
-			</h3>
+			<div>
+				<span class="next-label-container">
+					<span class="next next--active" v-if="hasNextLabel" @click="removeNextLabel()">
+						NEXT
+					</span>
+					<span class="next next--inactive" v-else @click="addNextLabel()">
+						Add to NEXT
+					</span>
+				</span>
+				<h3>
+					{{issue.title}}
+					<span v-if="issue.state === 'closed'" class="text-danger">(closed)</span>
+				</h3>
+			</div>
 			<div>
 				<span v-if="project">
 					<a :href="project.web_url + '/-/issues/' + issue.iid" target="_blank">
@@ -84,6 +94,10 @@
 			return this.milestones.find(milestone => milestone.id === this.selectedMilestone)?.title || '';
 		}
 
+		get hasNextLabel(): boolean {
+			return this.issue.labels ? this.issue.labels.includes('NEXT') : false;
+		}
+
 		get description() {
 			if (this.issue && this.project) {
 				if (this.issue.description) {
@@ -104,6 +118,25 @@
 				useStore.setIssue(index, response.data);
 			})
 		}
+
+		public addNextLabel() {
+			if (this.issue.labels && !this.issue.labels.includes('NEXT')) {
+				this.updateLabels([...this.issue.labels, 'NEXT'])
+			}
+		}
+
+		public removeNextLabel() {
+			if (this.issue.labels && this.issue.labels.includes('NEXT')) {
+				this.updateLabels(this.issue.labels.filter(label => label !== 'NEXT'))
+			}
+		}
+
+		private updateLabels(newLabels: string[]) {
+			let index = this.selectedIndex;
+			axios.post(this.API_PATH + '/assign_issue/' + this.issue.iid, { labels: newLabels }).then((response) => {
+				useStore.setIssue(index, response.data);
+			})
+		}
 	}
 </script>
 
@@ -120,6 +153,25 @@
 			box-shadow: none;
 			padding: 20px 0;
 		}
+	}
+	.next {
+		border: 1px solid #6c757d;
+		font-weight: bold;
+		font-size: 12px;
+		padding: 4px 8px;
+		border-radius: 5px;
+		cursor: pointer;
+		color: #6c757d;
+
+		&.next--active {
+			border: 1px solid #28a745;
+			background-color: #28a745;
+			color: white;
+		}
+	}
+
+	.next-label-container {
+		float: right;
 	}
 </style>
 <style lang="less">
