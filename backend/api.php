@@ -39,7 +39,7 @@ $app->get('/users', function (Request $request, Response $response, array $args)
 	if (isset($GLOBALS['_FILTERED_USERS']) && is_array($GLOBALS['_FILTERED_USERS'])) {
 		$filtered = [];
 		foreach ($users as $user) {
-			if (!in_array($user['username'], $GLOBALS['_FILTERED_USERS'])) {
+			if (!$user['bot'] && !in_array($user['username'], $GLOBALS['_FILTERED_USERS'])) {
 				$filtered[] = $user;
 			}
 		}
