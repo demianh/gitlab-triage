@@ -20,10 +20,10 @@
 							<span class="d-none d-sm-inline mx-2">
 								Filter:
 							</span>
-							<select v-model="selectedFilter" class="form-control mr-2">
-								<option value="all">All</option>
-								<option value="next">NEXT</option>
-							</select>
+<!--							<select v-model="selectedFilter" class="form-control mr-2">-->
+<!--								<option value="all">All</option>-->
+<!--								<option value="next">NEXT</option>-->
+<!--							</select>-->
 							&nbsp;<button @click="view = 'list'" class="btn btn-outline-secondary">Show List</button>
 							&nbsp;<button @click="view = 'search'" class="btn btn-outline-secondary">🔍</button>
 						</div>
@@ -204,7 +204,7 @@
 
 		public search: string = '';
 
-		public selectedFilter: string = 'next';
+		public selectedFilter: string = 'all';
 
 		get API_PATH(): string {
 			return useStore.state.API_PATH;

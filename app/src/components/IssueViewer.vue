@@ -1,16 +1,15 @@
 <template>
 	<div class="issue-viewer">
 		<div v-if="issue">
-
 			<div>
-				<span class="next-label-container">
-					<span class="next next--active" v-if="hasNextLabel" @click="removeNextLabel()">
-						NEXT
-					</span>
-					<span class="next next--inactive" v-else @click="addNextLabel()">
-						Add to NEXT
-					</span>
-				</span>
+<!--				<span class="next-label-container">-->
+<!--					<span class="next next&#45;&#45;active" v-if="hasNextLabel" @click="removeNextLabel()">-->
+<!--						NEXT-->
+<!--					</span>-->
+<!--					<span class="next next&#45;&#45;inactive" v-else @click="addNextLabel()">-->
+<!--						Add to NEXT-->
+<!--					</span>-->
+<!--				</span>-->
 				<h3>
 					{{issue.title}}
 					<span v-if="issue.state === 'closed'" class="text-danger">(closed)</span>
@@ -119,24 +118,24 @@
 			})
 		}
 
-		public addNextLabel() {
-			if (this.issue.labels && !this.issue.labels.includes('NEXT')) {
-				this.updateLabels([...this.issue.labels, 'NEXT'])
-			}
-		}
-
-		public removeNextLabel() {
-			if (this.issue.labels && this.issue.labels.includes('NEXT')) {
-				this.updateLabels(this.issue.labels.filter(label => label !== 'NEXT'))
-			}
-		}
-
-		private updateLabels(newLabels: string[]) {
-			let index = this.selectedIndex;
-			axios.post(this.API_PATH + '/assign_issue/' + this.issue.iid, { labels: newLabels }).then((response) => {
-				useStore.setIssue(index, response.data);
-			})
-		}
+		// public addNextLabel() {
+		// 	if (this.issue.labels && !this.issue.labels.includes('NEXT')) {
+		// 		this.updateLabels([...this.issue.labels, 'NEXT'])
+		// 	}
+		// }
+		//
+		// public removeNextLabel() {
+		// 	if (this.issue.labels && this.issue.labels.includes('NEXT')) {
+		// 		this.updateLabels(this.issue.labels.filter(label => label !== 'NEXT'))
+		// 	}
+		// }
+		//
+		// private updateLabels(newLabels: string[]) {
+		// 	let index = this.selectedIndex;
+		// 	axios.post(this.API_PATH + '/assign_issue/' + this.issue.iid, { labels: newLabels }).then((response) => {
+		// 		useStore.setIssue(index, response.data);
+		// 	})
+		// }
 	}
 </script>
 
