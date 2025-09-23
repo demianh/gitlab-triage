@@ -2,14 +2,14 @@
 	<div class="issue-viewer">
 		<div v-if="issue">
 			<div>
-<!--				<span class="next-label-container">-->
-<!--					<span class="next next&#45;&#45;active" v-if="hasNextLabel" @click="removeNextLabel()">-->
-<!--						NEXT-->
-<!--					</span>-->
-<!--					<span class="next next&#45;&#45;inactive" v-else @click="addNextLabel()">-->
-<!--						Add to NEXT-->
-<!--					</span>-->
-<!--				</span>-->
+				<span class="next-label-container">
+					<span class="next next--active" v-if="hasNextStatus">
+						{{issue.status.name}}
+					</span>
+					<span class="next next--inactive" v-else :style="{borderColor: issue.status.color, color: issue.status.color}">
+						{{issue.status.name}}
+					</span>
+				</span>
 				<h3>
 					{{issue.title}}
 					<span v-if="issue.state === 'closed'" class="text-danger">(closed)</span>
@@ -21,8 +21,10 @@
 						Open #{{issue.iid}} in Gitlab
 					</a>
 				</span>
-				<span v-for="label in issue.labels">
-					<span class="badge badge-pill badge-dark" :style="{backgroundColor: labels[label] ? labels[label].color : 'inherit'}">{{label}}</span>&nbsp;
+				<span v-if="issue.labels.nodes">
+					<span v-for="label in issue.labels.nodes">
+						<span class="badge badge-pill badge-dark" :style="{backgroundColor: label.color ? label.color : 'inherit'}">{{label.title}}</span>&nbsp;
+					</span>
 				</span>
 			</div>
 			<div class="text-muted">
@@ -39,10 +41,10 @@
 			<div class="issue-description">
 				<vue-markdown :source="description"></vue-markdown>
 			</div>
-			<div v-if="issue.user_notes_count > 0">
+			<div v-if="issue.notes && issue.notes.count > 0">
 				<hr>
 				<a :href="project.web_url + '/issues/' + issue.iid" target="_blank">
-					{{issue.user_notes_count}} Comments
+					{{issue.notes.count}} Comments
 				</a>
 			</div>
 
@@ -93,8 +95,11 @@
 			return this.milestones.find(milestone => milestone.id === this.selectedMilestone)?.title || '';
 		}
 
-		get hasNextLabel(): boolean {
-			return this.issue.labels ? this.issue.labels.includes('NEXT') : false;
+		get hasNextStatus(): boolean {
+			if (!this.issue || !this.issue.status) {
+				return false;
+			}
+			return this.issue.status.name === 'Next Release';
 		}
 
 		get description() {
@@ -114,28 +119,9 @@
 
 			let index = this.selectedIndex;
 			axios.post(this.API_PATH + '/assign_issue/' + this.issue.iid, postdata).then((response) => {
-				useStore.setIssue(index, response.data);
+				useStore.setIssueByIid(this.issue.iid, response.data);
 			})
 		}
-
-		// public addNextLabel() {
-		// 	if (this.issue.labels && !this.issue.labels.includes('NEXT')) {
-		// 		this.updateLabels([...this.issue.labels, 'NEXT'])
-		// 	}
-		// }
-		//
-		// public removeNextLabel() {
-		// 	if (this.issue.labels && this.issue.labels.includes('NEXT')) {
-		// 		this.updateLabels(this.issue.labels.filter(label => label !== 'NEXT'))
-		// 	}
-		// }
-		//
-		// private updateLabels(newLabels: string[]) {
-		// 	let index = this.selectedIndex;
-		// 	axios.post(this.API_PATH + '/assign_issue/' + this.issue.iid, { labels: newLabels }).then((response) => {
-		// 		useStore.setIssue(index, response.data);
-		// 	})
-		// }
 	}
 </script>
 
@@ -159,7 +145,6 @@
 		font-size: 12px;
 		padding: 4px 8px;
 		border-radius: 5px;
-		cursor: pointer;
 		color: #6c757d;
 
 		&.next--active {

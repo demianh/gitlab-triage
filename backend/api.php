@@ -3,6 +3,7 @@ error_reporting(E_ERROR | E_WARNING | E_PARSE);
 
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use Webling\GitLab\GraphQLService;
 
 require 'vendor/autoload.php';
 require './_config.php';
@@ -47,59 +48,61 @@ $app->get('/users', function (Request $request, Response $response, array $args)
 	}
 	return $response->withJson($users);
 });
-$app->get('/issues', function (Request $request, Response $response, array $args) use ($client) {
-	$instance = new \Gitlab\Api\Issues($client);
-	$issues = loadIssues($instance, 'None');
 
-	if (isset($request->getQueryParams()['milestone'])) {
-		$issues = array_merge($issues, loadIssues($instance, $request->getQueryParams()['milestone']));
-	}
-
-	return $response->withJson($issues);
-});
-
-function loadIssues($instance, $milestone = '') {
-	$issues = [];
-
-	// load more than 100 issues
-	$page = 1;
-	while ($page < 100) {
-		$paged_issues = $instance->all(GITLAB_PROJECT_ID, [
-			'state' => 'opened',
-			'per_page' => 100,
-			'page' => $page,
-			'milestone' => $milestone,
-		]);
-		if (count($paged_issues) > 0) {
-			foreach ($paged_issues as $issue) {
-				$issues[] = $issue;
-			}
-		} else {
-			break;
-		}
-		$page++;
-	}
-
-	// apply label filter
-	if (isset($GLOBALS['_FILTERED_LABELS']) && is_array($GLOBALS['_FILTERED_LABELS'])) {
-		$filtered = [];
-		foreach ($issues as $issue) {
-			$show = true;
-			if (isset($issue['labels']) && count($issue['labels'])) {
-				foreach ($issue['labels'] as $label) {
-					if (in_array($label, $GLOBALS['_FILTERED_LABELS'])) {
-						$show = false;
-					}
-				}
-			}
-			if ($show) {
-				$filtered[] = $issue;
-			}
-		}
-		$issues = $filtered;
-	}
-	return $issues;
-}
+// deprecated, use /graphql/issues instead
+//$app->get('/issues', function (Request $request, Response $response, array $args) use ($client) {
+//	$instance = new \Gitlab\Api\Issues($client);
+//	$issues = loadIssues($instance, 'None');
+//
+//	if (isset($request->getQueryParams()['milestone'])) {
+//		$issues = array_merge($issues, loadIssues($instance, $request->getQueryParams()['milestone']));
+//	}
+//
+//	return $response->withJson($issues);
+//});
+//
+//function loadIssues($instance, $milestone = '') {
+//	$issues = [];
+//
+//	// load more than 100 issues
+//	$page = 1;
+//	while ($page < 100) {
+//		$paged_issues = $instance->all(GITLAB_PROJECT_ID, [
+//			'state' => 'opened',
+//			'per_page' => 100,
+//			'page' => $page,
+//			'milestone' => $milestone,
+//		]);
+//		if (count($paged_issues) > 0) {
+//			foreach ($paged_issues as $issue) {
+//				$issues[] = $issue;
+//			}
+//		} else {
+//			break;
+//		}
+//		$page++;
+//	}
+//
+//	// apply label filter
+//	if (isset($GLOBALS['_FILTERED_LABELS']) && is_array($GLOBALS['_FILTERED_LABELS'])) {
+//		$filtered = [];
+//		foreach ($issues as $issue) {
+//			$show = true;
+//			if (isset($issue['labels']) && count($issue['labels'])) {
+//				foreach ($issue['labels'] as $label) {
+//					if (in_array($label, $GLOBALS['_FILTERED_LABELS'])) {
+//						$show = false;
+//					}
+//				}
+//			}
+//			if ($show) {
+//				$filtered[] = $issue;
+//			}
+//		}
+//		$issues = $filtered;
+//	}
+//	return $issues;
+//}
 
 $app->get('/issue/{id}', function (Request $request, Response $response, array $args) use ($client) {
 	$issues = new \Gitlab\Api\Issues($client);
@@ -141,18 +144,77 @@ $app->post('/assign_issue/{id}', function (Request $request, Response $response,
 	if (isset($body['labels'])) {
 		$data['labels'] = $body['labels'];
 	}
-	$result = $issues->update(GITLAB_PROJECT_ID, $args['id'], $data);
-	return $response->withJson($result);
+	$issues->update(GITLAB_PROJECT_ID, $args['id'], $data);
+	$newIssueData = loadIssueByIid($args['id']);
+	return $response->withJson($newIssueData);
 });
 $app->post('/close_issue/{id}', function (Request $request, Response $response, array $args) use ($client) {
 	$issues = new \Gitlab\Api\Issues($client);
-	$result = $issues->update(GITLAB_PROJECT_ID, $args['id'], ['state_event' => 'close', 'assignee_ids' => [0], 'milestone_id' => 0]);
-	return $response->withJson($result);
+	$issues->update(GITLAB_PROJECT_ID, $args['id'], ['state_event' => 'close', 'assignee_ids' => [0], 'milestone_id' => 0]);
+	$newIssueData = loadIssueByIid($args['id']);
+	return $response->withJson($newIssueData);
 });
 $app->post('/reopen_issue/{id}', function (Request $request, Response $response, array $args) use ($client) {
 	$issues = new \Gitlab\Api\Issues($client);
-	$result = $issues->update(GITLAB_PROJECT_ID, $args['id'], ['state_event' => 'reopen']);
-	return $response->withJson($result);
+	$issues->update(GITLAB_PROJECT_ID, $args['id'], ['state_event' => 'reopen']);
+	$newIssueData = loadIssueByIid($args['id']);
+	return $response->withJson($newIssueData);
 });
+
+
+// --- GraphQL Section ---
+
+$app->get('/graphql/issues', function (Request $request, Response $response, array $args) use ($client) {
+	$milestone = null;
+	if (isset($request->getQueryParams()['milestone'])) {
+		$milestone = trim($request->getQueryParams()['milestone']);
+	}
+	$endpoint = GITLAB_URL . '/api/graphql';
+	$service = new GraphQLService($endpoint, GITLAB_TOKEN, GITLAB_PROJECT_FULL_PATH);
+	$allIssues = $service->fetchOpenIssues();
+
+	// filter by milestone if set
+	if ($milestone !== null && $milestone !== '') {
+		// filter all issues with the given milestone title, or no milestone
+		$allIssues = array_filter($allIssues, function ($issue) use ($milestone) {
+			return $issue['milestone'] === null || $issue['milestone']['title'] === $milestone;
+		});
+		$allIssues = array_values($allIssues); // reindex array
+	}
+
+	// apply label filter
+	if (isset($GLOBALS['_FILTERED_LABELS']) && is_array($GLOBALS['_FILTERED_LABELS'])) {
+		$filtered = [];
+		foreach ($allIssues as $issue) {
+			$show = true;
+			if (isset($issue['labels']) && count($issue['labels']['nodes'])) {
+				foreach ($issue['labels']['nodes'] as $label) {
+					if (in_array($label['title'], $GLOBALS['_FILTERED_LABELS'])) {
+						$show = false;
+					}
+				}
+			}
+			if ($show) {
+				$filtered[] = $issue;
+			}
+		}
+		$allIssues = $filtered;
+	}
+
+	return $response->withJson($allIssues);
+});
+
+$app->get('/graphql/issue/{id}', function (Request $request, Response $response, array $args) use ($client) {
+	$iid = $args['id'];
+	$issue = loadIssueByIid($iid);
+	return $response->withJson($issue);
+});
+
+
+function loadIssueByIid($iid) {
+	$endpoint = GITLAB_URL . '/api/graphql';
+	$service = new GraphQLService($endpoint, GITLAB_TOKEN, GITLAB_PROJECT_FULL_PATH);
+	return $service->fetchIssueByIid($iid);
+}
 
 $app->run();

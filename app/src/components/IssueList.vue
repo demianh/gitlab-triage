@@ -8,7 +8,7 @@
 					<span v-if="weightPerPerson[user.id]" class="badge badge-primary float-right">{{weightPerPerson[user.id]}}</span>
 				</div>
 				<div class="list">
-					<div v-for="(issue, index) in issues" class="issue" v-if="issue.assignees.length > 0 && issue.assignees[0].id === user.id">
+					<div v-for="(issue, index) in issues" class="issue" v-if="issue.assignees.nodes && issue.assignees.nodes.length > 0 && idFromGid(issue.assignees.nodes[0].id) === user.id">
 						<span v-if="project">
 							<a :href="project.web_url + '/issues/' + issue.iid" target="_blank">
 								#{{issue.iid}}
@@ -49,7 +49,19 @@
 		}
 
 		public hasIssues(userId: number): boolean {
-			return this.issues.some(issue => issue.assignees.length > 0 && issue.assignees.some(assignee => assignee.id === userId));
+			return this.issues.some(issue => issue.assignees.nodes?.length > 0 && issue.assignees.nodes.some(assignee => this.idFromGid(assignee.id) === userId));
+		}
+
+		public idFromGid(gid: string): number {
+			// parse id from GraphQL node id string, example: "gid://gitlab/User/42"
+			let parts = gid.split('/');
+			if (parts.length > 0) {
+				let id = parseInt(parts[parts.length - 1]);
+				if (!isNaN(id)) {
+					return id;
+				}
+			}
+			return 0;
 		}
 
 		public unassignIssue(index: number) {
@@ -61,11 +73,11 @@
 
 			// remove Prio Labels when unassigning
 			if (selectedIssue.labels) {
-				postdata.labels = selectedIssue.labels.filter(label => label !== 'Prio 1' && label !== 'Prio 2' && label !== 'Prio 3');
+				postdata.labels = selectedIssue.labels.nodes.filter(label => label.title !== 'Prio 1' && label.title !== 'Prio 2' && label.title !== 'Prio 3');
 			}
 
 			axios.post(useStore.state.API_PATH + '/assign_issue/' + selectedIssue.iid, postdata).then((response) => {
-				useStore.setIssue(index, response.data);
+				useStore.setIssueByIid(selectedIssue.iid, response.data);
 			})
 		}
 	}

@@ -3,11 +3,17 @@
         "m4tthumphrey/php-gitlab-api": "^12.0",
         "slim/slim": "^3.12",
         "guzzlehttp/guzzle": "^7.2",
-        "http-interop/http-factory-guzzle": "^1.0"
+        "http-interop/http-factory-guzzle": "^1.0",
+        "ext-curl": "*"
     },
     "config": {
         "allow-plugins": {
             "php-http/discovery": true
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Webling\\GitLab\\": "src/"
         }
     }
 }

@@ -1,8 +1,6 @@
 export default interface IIssueUser {
-	id: number;
+	id: string;
 	name: string;
 	username: string;
-	state: string;
-	avatar_url: string;
-	web_url: string;
+	avatarUrl: string;
 }

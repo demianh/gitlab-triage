@@ -20,10 +20,10 @@
 							<span class="d-none d-sm-inline mx-2">
 								Filter:
 							</span>
-<!--							<select v-model="selectedFilter" class="form-control mr-2">-->
-<!--								<option value="all">All</option>-->
-<!--								<option value="next">NEXT</option>-->
-<!--							</select>-->
+							<select v-model="selectedFilter" class="form-control mr-2">
+								<option value="all">All</option>
+								<option value="next">NEXT</option>
+							</select>
 							&nbsp;<button @click="view = 'list'" class="btn btn-outline-secondary">Show List</button>
 							&nbsp;<button @click="view = 'search'" class="btn btn-outline-secondary">🔍</button>
 						</div>
@@ -138,7 +138,7 @@
 									<div class="col-11">
 										<h5>
 											<a @click="goToIssue(issue.id)">
-												#{{issue.id}}
+												#{{issue.iid}}
 											</a>
 											{{issue.title}}
 										</h5>
@@ -149,15 +149,15 @@
 								</div>
 								<div>
 									<span v-if="issue.weight" class="badge badge-light mr-2">🕑 {{issue.weight}}</span>
-									<span v-if="issue.assignees.length > 0" class="mr-2">
-										<span v-for="assignee in issue.assignees">
-											<img :src="assignee.avatar_url" class="avatar"/>
+									<span v-if="issue.assignees.nodes.length > 0" class="mr-2">
+										<span v-for="assignee in issue.assignees.nodes">
+											<img :src="assignee.avatarUrl" class="avatar"/>
 											{{assignee.name}}
 										</span>
 									</span>
 									<span v-if="issue.milestone" class="mr-2">Milestone {{issue.milestone.title}}</span>
-									<span v-for="label in issue.labels">
-										<span class="badge badge-pill badge-dark" :style="{backgroundColor: labels[label] ? labels[label].color : 'inherit'}">{{label}}</span>&nbsp;
+									<span v-for="label in issue.labels.nodes">
+										<span class="badge badge-pill badge-dark" :style="{backgroundColor: label.color ? label.color : 'inherit'}">{{label.title}}</span>&nbsp;
 									</span>
 								</div>
 							</div>
@@ -211,8 +211,9 @@
 		}
 
 		get issues(): IIssue[] {
+			// filter for issues with status "Next Release"
 			if (this.selectedFilter === 'next') {
-				return useStore.state.issues.filter(issue => issue.labels.includes('NEXT'));
+				return useStore.state.issues.filter(issue => issue.status?.name === 'Next Release');
 			}
 			return useStore.state.issues;
 		}
@@ -259,8 +260,8 @@
 
 		get selectedIssueAssignee(): number|null {
 			if (this.issues[this.selectedIndex]) {
-				if (this.issues[this.selectedIndex].assignees.length > 0) {
-					return this.issues[this.selectedIndex].assignees[0].id;
+				if (this.issues[this.selectedIndex].assignees && this.issues[this.selectedIndex].assignees.nodes.length > 0) {
+					return this.idFromGid(this.issues[this.selectedIndex].assignees.nodes[0].id);
 				} else {
 					return 0;
 				}
@@ -286,8 +287,20 @@
 			}
 		}
 
+		public idFromGid(gid: string): number {
+			// parse id from GraphQL node id string, example: "gid://gitlab/User/42"
+			let parts = gid.split('/');
+			if (parts.length > 0) {
+				let id = parseInt(parts[parts.length - 1]);
+				if (!isNaN(id)) {
+					return id;
+				}
+			}
+			return 0;
+		}
+
 		public goToIssue(issueId: number) {
-			this.selectedIndex= this.issues.findIndex(issue => issue.id === issueId);
+			this.selectedIndex= this.issues.findIndex(issue => issue.iid === issueId);
 			this.view = 'issues';
 			window.scrollTo(0, 0);
 		}
@@ -304,8 +317,20 @@
 			this.loading = false;
 		}
 
+		// public async loadIssues() {
+		// 	let url = this.API_PATH + '/issues';
+		// 	if (this.milestones.length) {
+		// 		let selected = this.milestones.filter(milestone => milestone.id == this.selectedMilestone);
+		// 		if (selected.length > 0) {
+		// 			url += '?milestone=' + encodeURIComponent(selected[0].title)
+		// 		}
+		// 	}
+		// 	let response = await axios.get(url);
+		// 	useStore.setIssues(response.data);
+		// }
+
 		public async loadIssues() {
-			let url = this.API_PATH + '/issues';
+			let url = this.API_PATH + '/graphql/issues';
 			if (this.milestones.length) {
 				let selected = this.milestones.filter(milestone => milestone.id == this.selectedMilestone);
 				if (selected.length > 0) {
@@ -345,14 +370,14 @@
 		public closeIssue() {
 			let index = this.selectedIndex;
 			axios.post(this.API_PATH + '/close_issue/' + this.selectedIssue.iid).then((response) => {
-				useStore.setIssue(index, response.data);
+				useStore.setIssueByIid(this.selectedIssue.iid, response.data);
 			})
 		}
 
 		public reopenIssue(issueId: number) {
 			let index = this.selectedIndex;
 			axios.post(this.API_PATH + '/reopen_issue/' + this.selectedIssue.iid).then((response) => {
-				useStore.setIssue(index, response.data);
+				useStore.setIssueByIid(this.selectedIssue.iid, response.data);
 			})
 		}
 
@@ -375,14 +400,14 @@
 
 			let index = this.selectedIndex;
 			axios.post(this.API_PATH + '/assign_issue/' + this.selectedIssue.iid, postdata).then((response) => {
-				useStore.setIssue(index, response.data);
+				useStore.setIssueByIid(this.selectedIssue.iid, response.data);
 			})
 		}
 
 		public reloadIssue() {
 			let index = this.selectedIndex;
-			axios.get(this.API_PATH + '/issue/' + this.selectedIssue.iid).then((response) => {
-				useStore.setIssue(index, response.data);
+			axios.get(this.API_PATH + '/graphql/issue/' + this.selectedIssue.iid).then((response) => {
+				useStore.setIssueByIid(this.selectedIssue.iid, response.data);
 			});
 			return false;
 		}
@@ -427,9 +452,9 @@
 		public sortById() {
 			let sorted = this.issues.sort((a: IIssue, b: IIssue) => {
 				if (this.sortInverse) {
-					return a.id - b.id;
+					return a.iid - b.iid;
 				} else {
-					return b.id - a.id;
+					return b.iid - a.iid;
 				}
 			});
 			useStore.setIssues(sorted);
@@ -439,9 +464,9 @@
 		public sortByWeight() {
 			let sorted = this.issues.sort((a: IIssue, b: IIssue) => {
 				if (this.sortInverse) {
-					return a.weight - b.weight;
+					return (a.weight || 0) - (b.weight || 0);
 				} else {
-					return b.weight - a.weight;
+					return (b.weight || 0) - (a.weight || 0);
 				}
 			});
 			useStore.setIssues(sorted);

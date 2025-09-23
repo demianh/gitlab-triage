@@ -61,19 +61,39 @@ function setIssue(index: number, value: IIssue): void {
 	state.issues = copy
 }
 
+function setIssueByIid(iid: number, value: IIssue): void {
+	const index = state.issues.findIndex(issue => issue.iid === iid);
+	if (index !== -1) {
+		setIssue(index, value);
+	}
+}
+
+function idFromGid(gid: string): number {
+	// parse id from GraphQL node id string, example: "gid://gitlab/User/42"
+	let parts = gid.split('/');
+	if (parts.length > 0) {
+		let id = parseInt(parts[parts.length - 1]);
+		if (!isNaN(id)) {
+			return id;
+		}
+	}
+	return 0;
+}
+
 // Getter equivalent (use computed)
 const weightPerPerson = computed(() => {
 	const weights: {[userId: number]: number } = {}
 	if (state.issues) {
 		state.issues.forEach(issue => {
 			if (issue.weight) {
-				if (issue.assignees && issue.assignees.length > 0) {
-					issue.assignees.forEach(assignee => {
-						const userId = assignee.id
+				if (issue.assignees && issue.assignees.nodes && issue.assignees.nodes.length > 0) {
+					issue.assignees.nodes.forEach(assignee => {
+						const userId = idFromGid(assignee.id)
+						let weight = issue.weight || 0;
 						if (weights[userId]) {
-							weights[userId] += issue.weight
+							weights[userId] += weight
 						} else {
-							weights[userId] = issue.weight
+							weights[userId] = weight
 						}
 					})
 				}
@@ -94,5 +114,6 @@ export default {
 	setSelectedMilestone,
 	setSelectedIssueIndex,
 	setIssue,
+	setIssueByIid,
 	weightPerPerson
 }

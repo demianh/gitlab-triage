@@ -11,7 +11,7 @@
 				{{issue.title}}
 			</div>
 			<div>
-				<span v-for="label in issue.labels" class="badge badge-light mr-1 issue-label">{{label}}</span>
+				<span v-for="label in issue.labels.nodes" class="badge badge-light mr-1 issue-label">{{label.title}}</span>
 			</div>
 		</div>
 	</div>
@@ -20,17 +20,12 @@
 <script lang="ts">
 	import {Component, Vue} from 'vue-property-decorator';
 	import IIssue from "@/interfaces/IIssue";
-	import axios from 'axios';
 	import useStore from '@/useStore';
 
 	@Component({})
 	export default class PrintView extends Vue {
 		get issues(): IIssue[] {
 			return useStore.state.issues;
-		}
-
-		get project() {
-			return useStore.state.project;
 		}
 	}
 </script>
