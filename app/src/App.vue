@@ -137,7 +137,7 @@
 								<div class="row">
 									<div class="col-11">
 										<h5>
-											<a @click="goToIssue(issue.id)">
+											<a @click="goToIssue(issue.iid)">
 												#{{issue.iid}}
 											</a>
 											{{issue.title}}
@@ -151,7 +151,7 @@
 									<span v-if="issue.weight" class="badge badge-light mr-2">🕑 {{issue.weight}}</span>
 									<span v-if="issue.assignees.nodes.length > 0" class="mr-2">
 										<span v-for="assignee in issue.assignees.nodes">
-											<img :src="assignee.avatarUrl" class="avatar"/>
+											<img :src="prepareAvatarUrl(assignee.avatarUrl)" class="avatar"/>
 											{{assignee.name}}
 										</span>
 									</span>
@@ -230,6 +230,10 @@
 			return useStore.state.milestones;
 		}
 
+		get project() {
+			return useStore.state.project;
+		}
+
 		get selectedMilestone(): number {
 			return useStore.state.selectedMilestone;
 		}
@@ -299,8 +303,19 @@
 			return 0;
 		}
 
+		public prepareAvatarUrl(url: string): string {
+			if (url.startsWith('/')) {
+				// relative url, add project domain
+				if (this.project) {
+					let domain = new URL(this.project.web_url).origin;
+					return domain + url;
+				}
+			}
+			return url;
+		}
+
 		public goToIssue(issueId: number) {
-			this.selectedIndex= this.issues.findIndex(issue => issue.iid === issueId);
+			this.selectedIndex = this.issues.findIndex(issue => issue.iid === issueId);
 			this.view = 'issues';
 			window.scrollTo(0, 0);
 		}
