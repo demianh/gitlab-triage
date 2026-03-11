@@ -18,15 +18,13 @@
 </template>
 
 <script lang="ts">
-	import {Component, Vue} from 'vue-property-decorator';
+	import {Component, Prop, Vue} from 'vue-property-decorator';
 	import IIssue from "@/interfaces/IIssue";
 	import useStore from '@/useStore';
 
 	@Component({})
 	export default class PrintView extends Vue {
-		get issues(): IIssue[] {
-			return useStore.state.issues;
-		}
+		@Prop({ default: () => [] }) public issues!: IIssue[];
 	}
 </script>
 

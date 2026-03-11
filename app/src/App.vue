@@ -17,13 +17,7 @@
 							<select v-model="selectedMilestone" class="form-control mr-2">
 								<option v-for="milestone in milestones" :value="milestone.id">{{milestone.title}}</option>
 							</select>
-							<span class="d-none d-sm-inline mx-2">
-								Filter:
-							</span>
-							<select v-model="selectedFilter" class="form-control mr-2">
-								<option value="all">All</option>
-								<option value="next">NEXT</option>
-							</select>
+							<status-filter v-model="selectedFilter"></status-filter>
 							&nbsp;<button @click="view = 'list'" class="btn btn-outline-secondary">Show List</button>
 							&nbsp;<button @click="view = 'search'" class="btn btn-outline-secondary">🔍</button>
 						</div>
@@ -82,7 +76,7 @@
 			</div>
 			<div v-if="view === 'print'" class="container-fluid">
 				<main>
-					<print-view></print-view>
+					<print-view :issues="issues"></print-view>
 				</main>
 				<footer class="text-muted text-center d-print-none">
 					<a @click="view = 'issues'">Show List</a>&nbsp;
@@ -104,7 +98,7 @@
 					</div>
 				</header>
 				<main>
-					<issue-list></issue-list>
+					<issue-list :issues="issues"></issue-list>
 				</main>
 				<footer class="text-muted text-center">
 					Sort by:
@@ -116,13 +110,7 @@
 				<header class="nav-menue">
 					<div class="row">
 						<div class="col text-center form-inline justify-content-center">
-							<span class="d-none d-sm-inline">
-								Filter:
-							</span>
-							<select v-model="selectedFilter" class="ml-2 mr-4 form-control">
-								<option value="all">All</option>
-								<option value="next">NEXT</option>
-							</select>
+							<status-filter v-model="selectedFilter"></status-filter>
 							<button @click="view = 'issues'" class="btn btn-outline-secondary">Show Issues</button>
 						</div>
 					</div>
@@ -176,6 +164,7 @@
 
 <script lang="ts">
 	import {Component, Vue, Watch} from 'vue-property-decorator';
+	import StatusFilter from "@/components/StatusFilter.vue";
 	import IssueViewer from "@/components/IssueViewer.vue";
 	import axios from 'axios';
 	import IIssue from "@/interfaces/IIssue";
@@ -189,6 +178,7 @@
 			PrintView,
 			IssueViewer,
 			IssueList,
+			StatusFilter,
 		},
 	})
 	export default class App extends Vue {
@@ -204,16 +194,20 @@
 
 		public search: string = '';
 
-		public selectedFilter: string = 'all';
+		public selectedFilter: string = 'next';
 
 		get API_PATH(): string {
 			return useStore.state.API_PATH;
 		}
 
 		get issues(): IIssue[] {
-			// filter for issues with status "Next Release"
+			// filter for issues with the status "Next Release"
 			if (this.selectedFilter === 'next') {
 				return useStore.state.issues.filter(issue => issue.status?.name === 'Next Release');
+			}
+			// filter for issues with the status "Ready" and "Next Release"
+			if (this.selectedFilter === 'ready') {
+				return useStore.state.issues.filter(issue => issue.status?.name === 'Ready' || issue.status?.name === 'Next Release');
 			}
 			return useStore.state.issues;
 		}
