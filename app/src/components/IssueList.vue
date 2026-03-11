@@ -25,14 +25,16 @@
 </template>
 
 <script lang="ts">
-	import {Component, Prop, Vue} from 'vue-property-decorator';
+	import {Component, Vue} from 'vue-property-decorator';
 	import IIssue from "@/interfaces/IIssue";
 	import axios from 'axios';
 	import useStore from '@/useStore'
 
 	@Component({})
 	export default class IssueList extends Vue {
-		@Prop({ default: () => [] }) public issues!: IIssue[];
+		get issues(): IIssue[] {
+			return useStore.state.issues;
+		}
 
 		get users(): any[] {
 			return useStore.state.users;
