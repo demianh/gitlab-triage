@@ -1,85 +1,74 @@
 <template>
 	<div class="issue-list">
 		<div class="row">
-			<div class="col" v-for="user in users" v-if="hasIssues(user.id)">
-				<div class="username">
-					<img :src="user.avatar_url" class="avatar"/>
-					{{user.name}}
-					<span v-if="weightPerPerson[user.id]" class="badge badge-primary float-right">{{weightPerPerson[user.id]}}</span>
-				</div>
-				<div class="list">
-					<div v-for="(issue, index) in issues" class="issue" v-if="issue.assignees.nodes && issue.assignees.nodes.length > 0 && idFromGid(issue.assignees.nodes[0].id) === user.id">
-						<span v-if="project">
-							<a :href="project.web_url + '/issues/' + issue.iid" target="_blank">
-								#{{issue.iid}}
-							</a>
-						</span>
-						<a @click="unassignIssue(index)" class="float-right">&#10005;</a>
-						<span class="badge badge-secondary float-right mr-1">{{issue.weight}}</span>
-						{{issue.title}}
+			<template v-for="user in users">
+				<div class="col" v-if="hasIssues(user.id)" :key="user.id">
+					<div class="username">
+						<img :src="user.avatar_url" class="avatar"/>
+						{{user.name}}
+						<span v-if="weightPerPerson[user.id]" class="badge badge-primary float-right">{{weightPerPerson[user.id]}}</span>
+					</div>
+					<div class="list">
+						<template v-for="(issue, index) in issues">
+							<div class="issue" v-if="issue.assignees.nodes && issue.assignees.nodes.length > 0 && idFromGid(issue.assignees.nodes[0].id) === user.id" :key="issue.iid">
+								<span v-if="project">
+									<a :href="project.web_url + '/issues/' + issue.iid" target="_blank">
+										#{{issue.iid}}
+									</a>
+								</span>
+								<a @click="unassignIssue(index)" class="float-right">&#10005;</a>
+								<span class="badge badge-secondary float-right mr-1">{{issue.weight}}</span>
+								{{issue.title}}
+							</div>
+						</template>
 					</div>
 				</div>
-			</div>
+			</template>
 		</div>
 	</div>
 </template>
 
-<script lang="ts">
-	import {Component, Vue} from 'vue-property-decorator';
-	import IIssue from "@/interfaces/IIssue";
+<script setup lang="ts">
+	import { computed } from 'vue';
 	import axios from 'axios';
 	import useStore from '@/useStore'
 
-	@Component({})
-	export default class IssueList extends Vue {
-		get issues(): IIssue[] {
-			return useStore.state.issues;
-		}
+	const issues = computed(() => useStore.state.issues);
+	const users = computed(() => useStore.state.users);
+	const project = computed(() => useStore.state.project);
+	const weightPerPerson = computed(() => useStore.weightPerPerson.value);
 
-		get users(): any[] {
-			return useStore.state.users;
-		}
+	function hasIssues(userId: number): boolean {
+		return issues.value.some(issue => issue.assignees.nodes?.length > 0 && issue.assignees.nodes.some(assignee => idFromGid(assignee.id) === userId));
+	}
 
-		get project() {
-			return useStore.state.project;
-		}
-
-		get weightPerPerson(): {[key: number]: number} {
-			return useStore.weightPerPerson.value;
-		}
-
-		public hasIssues(userId: number): boolean {
-			return this.issues.some(issue => issue.assignees.nodes?.length > 0 && issue.assignees.nodes.some(assignee => this.idFromGid(assignee.id) === userId));
-		}
-
-		public idFromGid(gid: string): number {
-			// parse id from GraphQL node id string, example: "gid://gitlab/User/42"
-			let parts = gid.split('/');
-			if (parts.length > 0) {
-				let id = parseInt(parts[parts.length - 1]);
-				if (!isNaN(id)) {
-					return id;
-				}
+	function idFromGid(gid: string): number {
+		// parse id from GraphQL node id string, example: "gid://gitlab/User/42"
+		let parts = gid.split('/');
+		if (parts.length > 0) {
+			let id = parseInt(parts[parts.length - 1]);
+			if (!isNaN(id)) {
+				return id;
 			}
-			return 0;
+		}
+		return 0;
+	}
+
+	function unassignIssue(index: number) {
+		let selectedIssue = issues.value[index];
+		let postdata: any = {
+			milestone: 0,
+			user: 0
+		};
+
+		// remove Prio Labels when unassigning
+		if (selectedIssue.labels) {
+			postdata.labels = selectedIssue.labels.nodes.filter(label => label.title !== 'Prio 1' && label.title !== 'Prio 2' && label.title !== 'Prio 3');
 		}
 
-		public unassignIssue(index: number) {
-			let selectedIssue = this.issues[index];
-			let postdata: any = {
-				milestone: 0,
-				user: 0
-			};
-
-			// remove Prio Labels when unassigning
-			if (selectedIssue.labels) {
-				postdata.labels = selectedIssue.labels.nodes.filter(label => label.title !== 'Prio 1' && label.title !== 'Prio 2' && label.title !== 'Prio 3');
-			}
-
-			axios.post(useStore.state.API_PATH + '/assign_issue/' + selectedIssue.iid, postdata).then((response) => {
-				useStore.setIssueByIid(selectedIssue.iid, response.data);
-			})
-		}
+		axios.post(useStore.state.API_PATH + '/assign_issue/' + selectedIssue.iid, postdata).then((response) => {
+			useStore.setIssueByIid(selectedIssue.iid, response.data);
+		})
 	}
 </script>
 

@@ -1,6 +1,6 @@
 <template>
 	<div class="print-view">
-		<div class="issue-print-card" v-for="(issue, index) in issues">
+		<div class="issue-print-card" v-for="issue in issues" :key="issue.iid">
 			<div>
 				<span class="issue-number">
 					#{{issue.iid}}
@@ -11,21 +11,21 @@
 				{{issue.title}}
 			</div>
 			<div>
-				<span v-for="label in issue.labels.nodes" class="badge badge-light mr-1 issue-label">{{label.title}}</span>
+				<span v-for="label in issue.labels.nodes" :key="label.title" class="badge badge-light mr-1 issue-label">{{label.title}}</span>
 			</div>
 		</div>
 	</div>
 </template>
 
-<script lang="ts">
-	import {Component, Prop, Vue} from 'vue-property-decorator';
+<script setup lang="ts">
 	import IIssue from "@/interfaces/IIssue";
-	import useStore from '@/useStore';
 
-	@Component({})
-	export default class PrintView extends Vue {
-		@Prop({ default: () => [] }) public issues!: IIssue[];
-	}
+	defineProps({
+		issues: {
+			type: Array as () => IIssue[],
+			default: () => []
+		}
+	});
 </script>
 
 <style scoped lang="less">

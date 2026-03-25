@@ -1,3 +1,4 @@
+
 <template>
 	<div id="app">
 		<div v-if="loading" class="text-center mt-5">
@@ -15,7 +16,7 @@
 								Target Milestone:
 							</span>
 							<select v-model="selectedMilestone" class="form-control mr-2">
-								<option v-for="milestone in milestones" :value="milestone.id">{{milestone.title}}</option>
+								<option v-for="milestone in milestones" :key="milestone.id" :value="milestone.id">{{milestone.title}}</option>
 							</select>
 							<status-filter v-model="selectedFilter"></status-filter>
 							&nbsp;<button @click="view = 'list'" class="btn btn-outline-secondary">Show List</button>
@@ -27,7 +28,7 @@
 					</div>
 					<div class="row">
 						<div class="col text-center pt-4">
-						<span v-for="user in users">
+						<span v-for="user in users" :key="user.id">
 							<button
 									type="button"
 									class="btn mb-1"
@@ -59,8 +60,8 @@
 					</div>
 				</header>
 				<main>
-					<transition :name="animation" v-if="selectedIssue">
-						<issue-viewer :issue="selectedIssue" :key="selectedIssue.id"></issue-viewer>
+					<transition :name="animation">
+						<issue-viewer v-if="selectedIssue" :issue="selectedIssue" :key="selectedIssue.id"></issue-viewer>
 					</transition>
 				</main>
 				<footer class="text-muted text-center pb-2">
@@ -91,7 +92,7 @@
 						<div class="col text-center form-inline justify-content-center">
 							Target Milestone:
 							<select v-model="selectedMilestone" class="form-control mx-2">
-								<option v-for="milestone in milestones" :value="milestone.id">{{milestone.title}}</option>
+								<option v-for="milestone in milestones" :key="milestone.id" :value="milestone.id">{{milestone.title}}</option>
 							</select>
 							&nbsp;<button @click="view = 'issues'" class="btn btn-outline-secondary">Show Issues</button>
 						</div>
@@ -117,10 +118,10 @@
 				</header>
 				<main>
 					<div class="issue-search">
-						<input type="search" class="issue-search__input" placeholder="Search" v-model="search" ref="search" autofocus/>
+						<input type="search" class="issue-search__input" placeholder="Search" v-model="search" ref="searchInput" autofocus/>
 					</div>
 					<div class="issue-list">
-						<div v-for="issue in filteredIssues">
+						<div v-for="issue in filteredIssues" :key="issue.iid">
 							<div class="issue-list__item">
 								<div class="row">
 									<div class="col-11">
@@ -138,13 +139,13 @@
 								<div>
 									<span v-if="issue.weight" class="badge badge-light mr-2">🕑 {{issue.weight}}</span>
 									<span v-if="issue.assignees.nodes.length > 0" class="mr-2">
-										<span v-for="assignee in issue.assignees.nodes">
+										<span v-for="assignee in issue.assignees.nodes" :key="assignee.id">
 											<img :src="prepareAvatarUrl(assignee.avatarUrl)" class="avatar"/>
 											{{assignee.name}}
 										</span>
 									</span>
 									<span v-if="issue.milestone" class="mr-2">Milestone {{issue.milestone.title}}</span>
-									<span v-for="label in issue.labels.nodes">
+									<span v-for="label in issue.labels.nodes" :key="label.title">
 										<span class="badge badge-pill badge-dark" :style="{backgroundColor: label.color ? label.color : 'inherit'}">{{label.title}}</span>&nbsp;
 									</span>
 								</div>
@@ -162,8 +163,8 @@
 	</div>
 </template>
 
-<script lang="ts">
-	import {Component, Vue, Watch} from 'vue-property-decorator';
+<script setup lang="ts">
+	import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 	import StatusFilter from "@/components/StatusFilter.vue";
 	import IssueViewer from "@/components/IssueViewer.vue";
 	import axios from 'axios';
@@ -173,352 +174,278 @@
 	import PrintView from "@/components/PrintView.vue";
 	import useStore from '@/useStore'
 
-	@Component({
-		components: {
-			PrintView,
-			IssueViewer,
-			IssueList,
-			StatusFilter,
-		},
-	})
-	export default class App extends Vue {
-		public keyHandler: any = null;
+	const searchInput = ref<HTMLInputElement | null>(null);
 
-		public sortInverse: boolean = false;
+	const sortInverse = ref(false);
+	const view = ref('issues');
+	const loading = ref(false);
+	const animation = ref('forward');
+	const search = ref('');
+	const selectedFilter = ref('next');
 
-		public view: string = 'issues';
+	const API_PATH = computed(() => useStore.state.API_PATH);
 
-		public loading: boolean = false;
-
-		public animation: string = 'forward';
-
-		public search: string = '';
-
-		public selectedFilter: string = 'next';
-
-		get API_PATH(): string {
-			return useStore.state.API_PATH;
+	const issues = computed(() => {
+		// filter for issues with the status "Next Release"
+		if (selectedFilter.value === 'next') {
+			return useStore.state.issues.filter(issue => issue.status?.name === 'Next Release');
 		}
-
-		get issues(): IIssue[] {
-			// filter for issues with the status "Next Release"
-			if (this.selectedFilter === 'next') {
-				return useStore.state.issues.filter(issue => issue.status?.name === 'Next Release');
-			}
-			// filter for issues with the status "Ready" and "Next Release"
-			if (this.selectedFilter === 'ready') {
-				return useStore.state.issues.filter(issue => issue.status?.name === 'Ready' || issue.status?.name === 'Next Release');
-			}
-			return useStore.state.issues;
+		// filter for issues with the status "Ready" and "Next Release"
+		if (selectedFilter.value === 'ready') {
+			return useStore.state.issues.filter(issue => issue.status?.name === 'Ready' || issue.status?.name === 'Next Release');
 		}
+		return useStore.state.issues;
+	});
 
-		get users(): IUser[] {
-			return useStore.state.users;
-		}
+	const users = computed(() => useStore.state.users);
+	const milestones = computed(() => useStore.state.milestones);
+	const project = computed(() => useStore.state.project);
 
-		get labels() {
-			return useStore.state.labels;
-		}
+	const selectedMilestone = computed({
+		get: () => useStore.state.selectedMilestone,
+		set: (value) => useStore.setSelectedMilestone(value)
+	});
 
-		get milestones(): any[] {
-			return useStore.state.milestones;
-		}
+	const selectedIndex = computed({
+		get: () => useStore.state.selectedIssueIndex,
+		set: (value) => useStore.setSelectedIssueIndex(value)
+	});
 
-		get project() {
-			return useStore.state.project;
-		}
+	const selectedIssue = computed(() => issues.value[selectedIndex.value]);
 
-		get selectedMilestone(): number {
-			return useStore.state.selectedMilestone;
-		}
+	const issueState = computed(() => selectedIssue.value ? selectedIssue.value.state : '');
 
-		set selectedMilestone(milestone: number) {
-			useStore.setSelectedMilestone(milestone);
-		}
-
-		get selectedIndex(): number {
-			return useStore.state.selectedIssueIndex;
-		}
-
-		set selectedIndex(index: number) {
-			useStore.setSelectedIssueIndex(index);
-		}
-
-		get selectedIssue(): IIssue {
-			return this.issues[this.selectedIndex];
-		}
-
-		get issueState(): string {
-			if (this.selectedIssue) {
-				return this.selectedIssue.state
+	const selectedIssueAssignee = computed(() => {
+		if (issues.value[selectedIndex.value]) {
+			if (issues.value[selectedIndex.value].assignees && issues.value[selectedIndex.value].assignees.nodes.length > 0) {
+				return idFromGid(issues.value[selectedIndex.value].assignees.nodes[0].id);
 			} else {
-				return '';
+				return 0;
 			}
 		}
+		return null;
+	});
 
-		get selectedIssueAssignee(): number|null {
-			if (this.issues[this.selectedIndex]) {
-				if (this.issues[this.selectedIndex].assignees && this.issues[this.selectedIndex].assignees.nodes.length > 0) {
-					return this.idFromGid(this.issues[this.selectedIndex].assignees.nodes[0].id);
-				} else {
-					return 0;
-				}
-			}
-			return null;
+	const weightPerPerson = computed(() => useStore.weightPerPerson.value);
+
+	function previousIssue() {
+		animation.value = 'back';
+		if (selectedIndex.value > 0) {
+			selectedIndex.value--;
 		}
-
-		get weightPerPerson(): {[key: number]: number} {
-			return useStore.weightPerPerson.value;
-		}
-
-		public previousIssue() {
-			this.animation = 'back';
-			if (this.selectedIndex > 0) {
-				this.selectedIndex--;
-			}
-		}
-
-		public nextIssue() {
-			this.animation = 'forward';
-			if (this.selectedIndex < this.issues.length - 1) {
-				this.selectedIndex++;
-			}
-		}
-
-		public idFromGid(gid: string): number {
-			// parse id from GraphQL node id string, example: "gid://gitlab/User/42"
-			let parts = gid.split('/');
-			if (parts.length > 0) {
-				let id = parseInt(parts[parts.length - 1]);
-				if (!isNaN(id)) {
-					return id;
-				}
-			}
-			return 0;
-		}
-
-		public prepareAvatarUrl(url: string): string {
-			if (url.startsWith('/')) {
-				// relative url, add project domain
-				if (this.project) {
-					let domain = new URL(this.project.web_url).origin;
-					return domain + url;
-				}
-			}
-			return url;
-		}
-
-		public goToIssue(issueId: number) {
-			this.selectedIndex = this.issues.findIndex(issue => issue.iid === issueId);
-			this.view = 'issues';
-			window.scrollTo(0, 0);
-		}
-
-		public async mounted() {
-			this.loading = true;
-			this.loadUsers();
-			this.loadLabels();
-			this.loadProject();
-			await this.loadMilestones();
-
-			// load issues after milestones
-			await this.loadIssues();
-			this.loading = false;
-		}
-
-		// public async loadIssues() {
-		// 	let url = this.API_PATH + '/issues';
-		// 	if (this.milestones.length) {
-		// 		let selected = this.milestones.filter(milestone => milestone.id == this.selectedMilestone);
-		// 		if (selected.length > 0) {
-		// 			url += '?milestone=' + encodeURIComponent(selected[0].title)
-		// 		}
-		// 	}
-		// 	let response = await axios.get(url);
-		// 	useStore.setIssues(response.data);
-		// }
-
-		public async loadIssues() {
-			let url = this.API_PATH + '/graphql/issues';
-			if (this.milestones.length) {
-				let selected = this.milestones.filter(milestone => milestone.id == this.selectedMilestone);
-				if (selected.length > 0) {
-					url += '?milestone=' + encodeURIComponent(selected[0].title)
-				}
-			}
-			let response = await axios.get(url);
-			useStore.setIssues(response.data);
-		}
-
-		public async loadUsers() {
-			let response = await axios.get(this.API_PATH + '/users');
-			let filtered = response.data.filter((user: IUser) => {
-				return user.state === 'active';
-			});
-			useStore.setUsers(filtered);
-		}
-
-		public async loadLabels() {
-			let response = await axios.get(this.API_PATH + '/labels');
-			useStore.setLabels(response.data);
-		}
-
-		public async loadProject() {
-			let response = await axios.get(this.API_PATH + '/project');
-			useStore.setProject(response.data);
-		}
-
-		public async loadMilestones() {
-			let response = await axios.get(this.API_PATH + '/milestones');
-			useStore.setMilestones(response.data);
-			if (this.milestones.length) {
-				this.selectedMilestone = this.milestones[0].id;
-			}
-		}
-
-		public closeIssue() {
-			let index = this.selectedIndex;
-			axios.post(this.API_PATH + '/close_issue/' + this.selectedIssue.iid).then((response) => {
-				useStore.setIssueByIid(this.selectedIssue.iid, response.data);
-			})
-		}
-
-		public reopenIssue(issueId: number) {
-			let index = this.selectedIndex;
-			axios.post(this.API_PATH + '/reopen_issue/' + this.selectedIssue.iid).then((response) => {
-				useStore.setIssueByIid(this.selectedIssue.iid, response.data);
-			})
-		}
-
-		public toggleAssignIssue(userId: number) {
-			if (this.selectedIssueAssignee === userId) {
-				this.assignIssue(0);
-			} else {
-				this.assignIssue(userId);
-			}
-		}
-
-		public assignIssue(userId: number) {
-			let postdata = {
-				milestone: this.selectedMilestone,
-				user: userId
-			};
-			if (userId == 0) {
-				postdata.milestone = 0;
-			}
-
-			let index = this.selectedIndex;
-			axios.post(this.API_PATH + '/assign_issue/' + this.selectedIssue.iid, postdata).then((response) => {
-				useStore.setIssueByIid(this.selectedIssue.iid, response.data);
-			})
-		}
-
-		public reloadIssue() {
-			let index = this.selectedIndex;
-			axios.get(this.API_PATH + '/graphql/issue/' + this.selectedIssue.iid).then((response) => {
-				useStore.setIssueByIid(this.selectedIssue.iid, response.data);
-			});
-			return false;
-		}
-
-		@Watch('selectedMilestone')
-		public watchMilestone() {
-			this.loadIssues();
-		}
-
-		@Watch('selectedFilter')
-		public watchSelectedFilter() {
-			this.selectedIndex = 0;
-		}
-
-		@Watch('view')
-		public watchView() {
-			if (this.view === 'search') {
-				this.$nextTick(() => {
-					(this.$refs.search as HTMLInputElement).focus();
-				});
-
-			}
-		}
-
-		// keyboard navigation
-		public created() {
-			this.keyHandler = (e: KeyboardEvent) => {
-				if (e.key === 'ArrowLeft') {
-					this.previousIssue();
-				}
-				if (e.key === 'ArrowRight') {
-					this.nextIssue();
-				}
-			};
-			window.addEventListener('keyup', this.keyHandler);
-		}
-
-		public beforeDestroy() {
-			window.removeEventListener('keyup', this.keyHandler);
-		}
-
-		public sortById() {
-			let sorted = this.issues.sort((a: IIssue, b: IIssue) => {
-				if (this.sortInverse) {
-					return a.iid - b.iid;
-				} else {
-					return b.iid - a.iid;
-				}
-			});
-			useStore.setIssues(sorted);
-			this.sortInverse = !this.sortInverse;
-		}
-
-		public sortByWeight() {
-			let sorted = this.issues.sort((a: IIssue, b: IIssue) => {
-				if (this.sortInverse) {
-					return (a.weight || 0) - (b.weight || 0);
-				} else {
-					return (b.weight || 0) - (a.weight || 0);
-				}
-			});
-			useStore.setIssues(sorted);
-			this.sortInverse = !this.sortInverse;
-		}
-
-		public sortRandom() {
-			useStore.setIssues(this.shuffleArray(this.issues));
-		}
-
-		private shuffleArray(array: any[]) {
-			let currentIndex = array.length, temporaryValue, randomIndex;
-
-			// While there remain elements to shuffle...
-			while (0 !== currentIndex) {
-
-				// Pick a remaining element...
-				randomIndex = Math.floor(Math.random() * currentIndex);
-				currentIndex -= 1;
-
-				// And swap it with the current element.
-				temporaryValue = array[currentIndex];
-				Vue.set(array, currentIndex, array[randomIndex]);
-				Vue.set(array, randomIndex, temporaryValue);
-			}
-			return array;
-		}
-
-		get filteredIssues() {
-			if (this.search === '') {
-				return this.issues;
-			}
-			// filter issues by search string
-			// split string by spaces and search for each word
-			let searchWords = this.search.split(' ');
-			return this.issues.filter(issue => {
-				return searchWords.every(word => {
-					return issue.title.toLowerCase().includes(word.toLowerCase());
-				});
-			});
-		}
-
 	}
+
+	function nextIssue() {
+		animation.value = 'forward';
+		if (selectedIndex.value < issues.value.length - 1) {
+			selectedIndex.value++;
+		}
+	}
+
+	function idFromGid(gid: string): number {
+		// parse id from GraphQL node id string, example: "gid://gitlab/User/42"
+		let parts = gid.split('/');
+		if (parts.length > 0) {
+			let id = parseInt(parts[parts.length - 1]);
+			if (!isNaN(id)) {
+				return id;
+			}
+		}
+		return 0;
+	}
+
+	function prepareAvatarUrl(url: string): string {
+		if (url.startsWith('/')) {
+			// relative url, add project domain
+			if (project.value) {
+				let domain = new URL(project.value.web_url).origin;
+				return domain + url;
+			}
+		}
+		return url;
+	}
+
+	function goToIssue(issueId: number) {
+		selectedIndex.value = issues.value.findIndex(issue => issue.iid === issueId);
+		view.value = 'issues';
+		window.scrollTo(0, 0);
+	}
+
+	async function loadIssues() {
+		let url = API_PATH.value + '/graphql/issues';
+		if (milestones.value.length) {
+			let selected = milestones.value.filter(milestone => milestone.id == selectedMilestone.value);
+			if (selected.length > 0) {
+				url += '?milestone=' + encodeURIComponent(selected[0].title)
+			}
+		}
+		let response = await axios.get(url);
+		useStore.setIssues(response.data);
+	}
+
+	async function loadUsers() {
+		let response = await axios.get(API_PATH.value + '/users');
+		let filtered = response.data.filter((user: IUser) => {
+			return user.state === 'active';
+		});
+		useStore.setUsers(filtered);
+	}
+
+	async function loadLabels() {
+		let response = await axios.get(API_PATH.value + '/labels');
+		useStore.setLabels(response.data);
+	}
+
+	async function loadProject() {
+		let response = await axios.get(API_PATH.value + '/project');
+		useStore.setProject(response.data);
+	}
+
+	async function loadMilestones() {
+		let response = await axios.get(API_PATH.value + '/milestones');
+		useStore.setMilestones(response.data);
+		if (milestones.value.length) {
+			selectedMilestone.value = milestones.value[0].id;
+		}
+	}
+
+	function closeIssue() {
+		axios.post(API_PATH.value + '/close_issue/' + selectedIssue.value.iid).then((response) => {
+			useStore.setIssueByIid(selectedIssue.value.iid, response.data);
+		})
+	}
+
+	function reopenIssue() {
+		axios.post(API_PATH.value + '/reopen_issue/' + selectedIssue.value.iid).then((response) => {
+			useStore.setIssueByIid(selectedIssue.value.iid, response.data);
+		})
+	}
+
+	function toggleAssignIssue(userId: number) {
+		if (selectedIssueAssignee.value === userId) {
+			assignIssue(0);
+		} else {
+			assignIssue(userId);
+		}
+	}
+
+	function assignIssue(userId: number) {
+		let postdata = {
+			milestone: selectedMilestone.value,
+			user: userId
+		};
+		if (userId == 0) {
+			postdata.milestone = 0;
+		}
+
+		axios.post(API_PATH.value + '/assign_issue/' + selectedIssue.value.iid, postdata).then((response) => {
+			useStore.setIssueByIid(selectedIssue.value.iid, response.data);
+		})
+	}
+
+	function reloadIssue() {
+		axios.get(API_PATH.value + '/graphql/issue/' + selectedIssue.value.iid).then((response) => {
+			useStore.setIssueByIid(selectedIssue.value.iid, response.data);
+		});
+		return false;
+	}
+
+	watch(selectedMilestone, () => {
+		loadIssues();
+	});
+
+	watch(selectedFilter, () => {
+		selectedIndex.value = 0;
+	});
+
+	watch(view, () => {
+		if (view.value === 'search') {
+			nextTick(() => {
+				if (searchInput.value) {
+					searchInput.value.focus();
+				}
+			});
+		}
+	});
+
+	const keyHandler = (e: KeyboardEvent) => {
+		if (e.key === 'ArrowLeft') {
+			previousIssue();
+		}
+		if (e.key === 'ArrowRight') {
+			nextIssue();
+		}
+	};
+
+	onMounted(async () => {
+		loading.value = true;
+		loadUsers();
+		loadLabels();
+		loadProject();
+		await loadMilestones();
+
+		// load issues after milestones
+		await loadIssues();
+		loading.value = false;
+
+		window.addEventListener('keyup', keyHandler);
+	});
+
+	onBeforeUnmount(() => {
+		window.removeEventListener('keyup', keyHandler);
+	});
+
+	function sortById() {
+		let sorted = [...issues.value].sort((a: IIssue, b: IIssue) => {
+			if (sortInverse.value) {
+				return a.iid - b.iid;
+			} else {
+				return b.iid - a.iid;
+			}
+		});
+		useStore.setIssues(sorted);
+		sortInverse.value = !sortInverse.value;
+	}
+
+	function sortByWeight() {
+		let sorted = [...issues.value].sort((a: IIssue, b: IIssue) => {
+			if (sortInverse.value) {
+				return (a.weight || 0) - (b.weight || 0);
+			} else {
+				return (b.weight || 0) - (a.weight || 0);
+			}
+		});
+		useStore.setIssues(sorted);
+		sortInverse.value = !sortInverse.value;
+	}
+
+	function sortRandom() {
+		useStore.setIssues(shuffleArray([...issues.value]));
+	}
+
+	function shuffleArray(array: any[]) {
+		let currentIndex = array.length, temporaryValue, randomIndex;
+		while (0 !== currentIndex) {
+			randomIndex = Math.floor(Math.random() * currentIndex);
+			currentIndex -= 1;
+			temporaryValue = array[currentIndex];
+			array[currentIndex] = array[randomIndex];
+			array[randomIndex] = temporaryValue;
+		}
+		return array;
+	}
+
+	const filteredIssues = computed(() => {
+		if (search.value === '') {
+			return issues.value;
+		}
+		let searchWords = search.value.split(' ');
+		return issues.value.filter(issue => {
+			return searchWords.every(word => {
+				return issue.title.toLowerCase().includes(word.toLowerCase());
+			});
+		});
+	});
 </script>
 
 <style lang="less">
@@ -581,14 +508,14 @@
 		transition: opacity 0.4s, transform 0.4s;
 		transform: translateX(0);
 	}
-	.back-enter,
+	.back-enter-from,
 	.forward-leave-to {
 		position: fixed;
 		opacity: 0;
 		transform: translateX(-1100px);
 	}
 	.back-leave-to,
-	.forward-enter {
+	.forward-enter-from {
 		position: fixed;
 		opacity: 0;
 		transform: translateX(1100px);

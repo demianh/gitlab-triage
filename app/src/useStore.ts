@@ -21,7 +21,7 @@ const state: UnwrapNestedRefs<{
 	milestones: [],
 	selectedMilestone: 0,
 	selectedIssueIndex: 0,
-	API_PATH: process.env.VUE_APP_API_PATH || 'http://localhost/projects/gitlab-triage/backend/api.php',
+	API_PATH: import.meta.env.VITE_APP_API_PATH || 'http://localhost/projects/gitlab-triage/backend/api.php',
 })
 
 // Mutations (plain functions that modify state)
@@ -54,11 +54,7 @@ function setSelectedIssueIndex(value: number) {
 }
 
 function setIssue(index: number, value: IIssue): void {
-	// Because Vue 2 reactivity may not catch some changes in arrays/objects,
-	// you might want to replace the entire array/object (like your original code).
-	const copy = JSON.parse(JSON.stringify(state.issues))
-	copy[index] = value
-	state.issues = copy
+	state.issues[index] = value
 }
 
 function setIssueByIid(iid: number, value: IIssue): void {

@@ -6,7 +6,7 @@
 					<span class="next next--active" v-if="hasNextStatus">
 						{{issue.status.name}}
 					</span>
-					<span class="next next--inactive" v-else :style="{borderColor: issue.status.color, color: issue.status.color}">
+					<span class="next next--inactive" v-else-if="issue.status" :style="{borderColor: issue.status.color, color: issue.status.color}">
 						{{issue.status.name}}
 					</span>
 				</span>
@@ -22,7 +22,7 @@
 					</a>
 				</span>
 				<span v-if="issue.labels.nodes">
-					<span v-for="label in issue.labels.nodes">
+					<span v-for="label in issue.labels.nodes" :key="label.title">
 						<span class="badge badge-pill badge-dark" :style="{backgroundColor: label.color ? label.color : 'inherit'}">{{label.title}}</span>&nbsp;
 					</span>
 				</span>
@@ -43,7 +43,7 @@
 			</div>
 			<div v-if="issue.notes && issue.notes.count > 0">
 				<hr>
-				<a :href="project.web_url + '/issues/' + issue.iid" target="_blank">
+				<a v-if="project" :href="project.web_url + '/issues/' + issue.iid" target="_blank">
 					{{issue.notes.count}} Comments
 				</a>
 			</div>
@@ -52,76 +52,53 @@
 	</div>
 </template>
 
-<script lang="ts">
-	import {Component, Prop, Vue} from 'vue-property-decorator';
-	import VueMarkdown from 'vue-markdown'
+<script setup lang="ts">
+	import { computed } from 'vue';
+	import VueMarkdown from 'vue-markdown-render'
 	import axios from 'axios';
 	import IIssue from "@/interfaces/IIssue";
 	import useStore from '@/useStore';
 
-	@Component({
-		components: {
-			'vue-markdown': VueMarkdown
-		},
-	})
-	export default class IssueViewer extends Vue {
-		@Prop() private issue!: IIssue;
+	const props = defineProps<{
+		issue: IIssue
+	}>();
 
-		get API_PATH(): string {
-			return useStore.state.API_PATH;
+	const API_PATH = computed(() => useStore.state.API_PATH);
+	const labels = computed(() => useStore.state.labels);
+	const project = computed(() => useStore.state.project);
+	const milestones = computed(() => useStore.state.milestones);
+	const selectedIndex = computed(() => useStore.state.selectedIssueIndex);
+	const selectedMilestone = computed(() => useStore.state.selectedMilestone);
+
+	const selectedMilestoneName = computed(() => {
+		return milestones.value.find(milestone => milestone.id === selectedMilestone.value)?.title || '';
+	});
+
+	const hasNextStatus = computed(() => {
+		if (!props.issue || !props.issue.status) {
+			return false;
 		}
+		return props.issue.status.name === 'Next Release';
+	});
 
-		get labels() {
-			return useStore.state.labels;
-		}
-
-		get project() {
-			return useStore.state.project;
-		}
-
-		get milestones(): any[] {
-			return useStore.state.milestones;
-		}
-
-		get selectedIndex(): number {
-			return useStore.state.selectedIssueIndex;
-		}
-
-		get selectedMilestone(): number {
-			return useStore.state.selectedMilestone;
-		}
-
-		get selectedMilestoneName(): string {
-			return this.milestones.find(milestone => milestone.id === this.selectedMilestone)?.title || '';
-		}
-
-		get hasNextStatus(): boolean {
-			if (!this.issue || !this.issue.status) {
-				return false;
+	const description = computed(() => {
+		if (props.issue && project.value) {
+			if (props.issue.description) {
+				let domain = new URL(project.value.web_url).origin;
+				return props.issue.description.replaceAll('(/uploads/', '(' + domain + '/-/project/' + project.value.id + '/uploads/');
 			}
-			return this.issue.status.name === 'Next Release';
 		}
+		return '';
+	});
 
-		get description() {
-			if (this.issue && this.project) {
-				if (this.issue.description) {
-					let domain = new URL(this.project.web_url).origin;
-					return this.issue.description.replaceAll('(/uploads/', '(' + domain + '/-/project/' + this.project.id + '/uploads/');
-				}
-			}
-			return '';
-		}
+	function setMilestone() {
+		let postdata = {
+			milestone: selectedMilestone.value,
+		};
 
-		public setMilestone() {
-			let postdata = {
-				milestone: this.selectedMilestone,
-			};
-
-			let index = this.selectedIndex;
-			axios.post(this.API_PATH + '/assign_issue/' + this.issue.iid, postdata).then((response) => {
-				useStore.setIssueByIid(this.issue.iid, response.data);
-			})
-		}
+		axios.post(API_PATH.value + '/assign_issue/' + props.issue.iid, postdata).then((response) => {
+			useStore.setIssueByIid(props.issue.iid, response.data);
+		})
 	}
 </script>
 
