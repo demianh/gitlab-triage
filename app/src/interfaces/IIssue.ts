@@ -7,7 +7,7 @@ export default interface IIssue {
 	description: string;
 	state: "opened"|"closed";
 	createdAt: string;
-	webUrl: string;
+	web_url: string;
 	weight: number | null;
 	status: {
 		id: string;

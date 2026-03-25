@@ -24,7 +24,7 @@ const state: UnwrapNestedRefs<{
 	API_PATH: import.meta.env.VITE_APP_API_PATH || 'http://localhost/projects/gitlab-triage/backend/api.php',
 })
 
-// Mutations (plain functions that modify state)
+// Mutations (plain functions that modify the state)
 function setLabels(value: any) {
 	state.labels = value
 }

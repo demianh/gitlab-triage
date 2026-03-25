@@ -2,11 +2,11 @@
 	<div class="issue-viewer">
 		<div v-if="issue">
 			<div>
-				<span class="next-label-container">
+				<span class="next-label-container" v-if="issue.status">
 					<span class="next next--active" v-if="hasNextStatus">
 						{{issue.status.name}}
 					</span>
-					<span class="next next--inactive" v-else-if="issue.status" :style="{borderColor: issue.status.color, color: issue.status.color}">
+					<span class="next next--inactive" v-else :style="{borderColor: issue.status.color, color: issue.status.color}">
 						{{issue.status.name}}
 					</span>
 				</span>
@@ -64,10 +64,8 @@
 	}>();
 
 	const API_PATH = computed(() => useStore.state.API_PATH);
-	const labels = computed(() => useStore.state.labels);
 	const project = computed(() => useStore.state.project);
 	const milestones = computed(() => useStore.state.milestones);
-	const selectedIndex = computed(() => useStore.state.selectedIssueIndex);
 	const selectedMilestone = computed(() => useStore.state.selectedMilestone);
 
 	const selectedMilestoneName = computed(() => {
@@ -92,11 +90,11 @@
 	});
 
 	function setMilestone() {
-		let postdata = {
+		let postData = {
 			milestone: selectedMilestone.value,
 		};
 
-		axios.post(API_PATH.value + '/assign_issue/' + props.issue.iid, postdata).then((response) => {
+		axios.post(API_PATH.value + '/assign_issue/' + props.issue.iid, postData).then((response) => {
 			useStore.setIssueByIid(props.issue.iid, response.data);
 		})
 	}

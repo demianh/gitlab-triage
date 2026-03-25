@@ -56,17 +56,17 @@
 
 	function unassignIssue(index: number) {
 		let selectedIssue = issues.value[index];
-		let postdata: any = {
+		let postData: any = {
 			milestone: 0,
 			user: 0
 		};
 
 		// remove Prio Labels when unassigning
 		if (selectedIssue.labels) {
-			postdata.labels = selectedIssue.labels.nodes.filter(label => label.title !== 'Prio 1' && label.title !== 'Prio 2' && label.title !== 'Prio 3');
+			postData.labels = selectedIssue.labels.nodes.filter(label => label.title !== 'Prio 1' && label.title !== 'Prio 2' && label.title !== 'Prio 3');
 		}
 
-		axios.post(useStore.state.API_PATH + '/assign_issue/' + selectedIssue.iid, postdata).then((response) => {
+		axios.post(useStore.state.API_PATH + '/assign_issue/' + selectedIssue.iid, postData).then((response) => {
 			useStore.setIssueByIid(selectedIssue.iid, response.data);
 		})
 	}
