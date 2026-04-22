@@ -36,7 +36,7 @@
 									:class="{'btn-primary': selectedIssueAssignee === user.id, 'btn-outline-primary': selectedIssueAssignee !== user.id}"
 									@click="toggleAssignIssue(user.id)"
 							>
-								<img :src="user.avatar_url" class="avatar"/>
+								<img :src="user.avatar_url" class="avatar mr-1"/>
 								<span class="username">
 									{{user.name}}
 									<span v-if="weightPerPerson[user.id]" class="badge badge-light">{{weightPerPerson[user.id]}}</span>
