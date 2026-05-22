@@ -63,7 +63,9 @@
 
 		// remove Prio Labels when unassigning
 		if (selectedIssue.labels) {
-			postData.labels = selectedIssue.labels.nodes.filter(label => label.title !== 'Prio 1' && label.title !== 'Prio 2' && label.title !== 'Prio 3');
+			postData.labels = selectedIssue.labels.nodes
+				.filter(label => label.title !== 'Prio 1' && label.title !== 'Prio 2' && label.title !== 'Prio 3')
+				.map(label => label.title);
 		}
 
 		axios.post(useStore.state.API_PATH + '/assign_issue/' + selectedIssue.iid, postData).then((response) => {
